@@ -1,6 +1,7 @@
 package com.nobody.nobodyplace.controller;
 
-import com.nobody.nobodyplace.request.User;
+
+import com.nobody.nobodyplace.entity.User;
 import com.nobody.nobodyplace.response.Result;
 import com.nobody.nobodyplace.service.UserService;
 import org.springframework.stereotype.Controller;

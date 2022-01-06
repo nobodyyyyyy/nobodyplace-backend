@@ -1,6 +1,6 @@
 package com.nobody.nobodyplace.interceptor;
 
-import com.nobody.nobodyplace.request.User;
+import com.nobody.nobodyplace.entity.User;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -12,7 +12,7 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     // 需要重定向的页面
     public static final String[] AUTH_REQUIRED_PAGES = new String[] {
-        "index"
+//        "index"
     };
 
     @Override
@@ -24,7 +24,6 @@ public class LoginInterceptor implements HandlerInterceptor {
         uri = StringUtils.remove(uri, contextPath + "/");
         if (needIntercept(uri)) {
             // 看是否登陆
-            // TODO 我自己的网页需要对什么规则重定向呢？
             User user = (User) session.getAttribute("user");
             if (user == null) {
                 httpServletResponse.sendRedirect("login");

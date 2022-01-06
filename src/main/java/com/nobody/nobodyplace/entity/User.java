@@ -1,4 +1,4 @@
-package com.nobody.nobodyplace.request;
+package com.nobody.nobodyplace.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -13,7 +13,6 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @Column(name = "id")
     int id;
 
     String username;
