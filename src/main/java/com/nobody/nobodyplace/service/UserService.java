@@ -1,6 +1,6 @@
 package com.nobody.nobodyplace.service;
 
-import com.nobody.nobodyplace.DAO.UserDAO;
+import com.nobody.nobodyplace.dao.UserDAO;
 import com.nobody.nobodyplace.entity.User;
 import org.springframework.stereotype.Service;
 

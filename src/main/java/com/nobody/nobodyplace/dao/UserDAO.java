@@ -1,5 +1,4 @@
-package com.nobody.nobodyplace.DAO;
-
+package com.nobody.nobodyplace.dao;
 
 import com.nobody.nobodyplace.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
