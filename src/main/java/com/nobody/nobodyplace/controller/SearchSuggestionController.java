@@ -11,18 +11,20 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Controller
 public class SearchSuggestionController {
 
-    private static final String USER_AGENT = "Mozilla/5.0"; // TODO ?
     private static final Logger Nlog = LoggerFactory.getLogger(SearchSuggestionController.class);
 
     private static final String GOOGLE_SUGGESTIONS_API_PREFIX = "http://suggestqueries.google.com/complete/search?output=toolbar&hl=zh&q=";
+
+    // 为了不在 ShadowSocks 中选择全局代理也能访问外网……
+    private static final String LOCAL_HOST = "127.0.0.1";
+    private static final int PROXY_PORT = 1087;
 
     public SearchSuggestionController() {
 
@@ -32,35 +34,26 @@ public class SearchSuggestionController {
     @ResponseBody
     @GetMapping(value = NobodyPlaceAPI.WEB_SEARCH)
     public Result getSearchSuggestions(String input) {
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-
-                // TODO Auto-generated method stub
-
-            }
-
-        }).start();
         try {
-            Nlog.info(">> Before handling input = " + input);
             long beginTime = System.currentTimeMillis();
 
             String url = GOOGLE_SUGGESTIONS_API_PREFIX + input;
             URL obj = new URL(url);
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+            Proxy proxy = new Proxy(java.net.Proxy.Type.HTTP, new InetSocketAddress(LOCAL_HOST, PROXY_PORT));
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection(proxy);
             con.setRequestMethod("GET");
-            con.setRequestProperty("User-Agent", USER_AGENT); // TODO
+            con.setConnectTimeout(1000);
 
             int responseCode = con.getResponseCode();
             if (responseCode != 200) {
+                Nlog.info("Handled input = '" + input + "' error, get responseCode = " + responseCode);
                 return new Result(400);
             }
             BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String flow;
+            String line;
             StringBuilder sb = new StringBuilder();
-            while ((flow = in.readLine()) != null) {
-                sb.append(flow);
+            while ((line = in.readLine()) != null) {
+                sb.append(line);
             }
             in.close();
 
@@ -77,11 +70,12 @@ public class SearchSuggestionController {
             ((SearchSuggestions) result.data).input = input;
             ((SearchSuggestions) result.data).suggestions = suggestions;
 
-            Nlog.info("handled input = " + input + " used " + (System.currentTimeMillis() - beginTime) + "ms");
+            Nlog.info("Successfully handled input = '" + input + "' used " + (System.currentTimeMillis() - beginTime) + "ms");
 
             return result;
 
         } catch (Exception e) {
+            Nlog.info("Handling input = '" + input + "' get Exception: " + e.toString());
             return new Result(400);
         }
     }
