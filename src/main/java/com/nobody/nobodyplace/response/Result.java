@@ -1,18 +1,21 @@
 package com.nobody.nobodyplace.response;
 
 public class Result {
-    //响应码
-    private int code;
+
+    public int code;
+    public String msg;
+    public Data data;
+
+    public Result() {
+        this.code = 400;
+    }
 
     public Result(int code) {
         this.code = code;
     }
 
-    public int getCode() {
-        return code;
-    }
-
-    public void setCode(int code) {
+    public Result(int code, String msg) {
         this.code = code;
+        this.msg = msg;
     }
 }
