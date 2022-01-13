@@ -1,7 +1,10 @@
 package com.nobody.nobodyplace.controller;
 
+import com.google.gson.Gson;
+import com.nobody.nobodyplace.gson.BingSuggestionResponse;
 import com.nobody.nobodyplace.response.Result;
 import com.nobody.nobodyplace.response.SearchSuggestions;
+import com.nobody.nobodyplace.utils.HttpUtil;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.slf4j.Logger;
@@ -9,11 +12,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.*;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Controller
 public class SearchSuggestionController {
@@ -21,10 +26,12 @@ public class SearchSuggestionController {
     private static final Logger Nlog = LoggerFactory.getLogger(SearchSuggestionController.class);
 
     private static final String GOOGLE_SUGGESTIONS_API_PREFIX = "http://suggestqueries.google.com/complete/search?output=toolbar&hl=zh&q=";
+    private static final String BAIDU_SUGGESTIONS_API_PREFIX = "http://suggestion.baidu.com/su?wd=";
+    private static final String BING_SUGGESTIONS_API_PREFIX = "http://api.bing.com/qsonhs.aspx?type=cb&q=";
 
-    // 为了不在 ShadowSocks 中选择全局代理也能访问外网……
-    private static final String LOCAL_HOST = "127.0.0.1";
-    private static final int PROXY_PORT = 1087;
+    private static final String SUGGESTION_ENGINE_BAIDU = "suggestion_engine_baidu";
+    private static final String SUGGESTION_ENGINE_GOOGLE = "suggestion_engine_google";
+    private static final String SUGGESTION_ENGINE_BING = "suggestion_engine_bing";
 
     public SearchSuggestionController() {
 
@@ -33,50 +40,119 @@ public class SearchSuggestionController {
     @CrossOrigin
     @ResponseBody
     @GetMapping(value = NobodyPlaceAPI.WEB_SEARCH)
-    public Result getSearchSuggestions(String input) {
+    public Result getSearchSuggestions(String engine, long seq, String input) {
+        switch (engine) {
+            case SUGGESTION_ENGINE_BING:
+                return getSuggestionsByEngineBing(seq, input);
+            case SUGGESTION_ENGINE_GOOGLE:
+                return getSuggestionsByEngineGoogle(seq, input);
+            case SUGGESTION_ENGINE_BAIDU:
+                return getSuggestionsByEngineBaidu(seq, input);
+            default:
+                Nlog.info("engine '" + engine + "' unsupported");
+                break;
+        }
+        return new Result(400);
+    }
+
+    private Result getSuggestionsByEngineBing(long seq, String input) {
+        try {
+            long beginTime = System.currentTimeMillis();
+            String url = BING_SUGGESTIONS_API_PREFIX + input;
+
+            URL obj = new URL(BING_SUGGESTIONS_API_PREFIX + URLEncoder.encode(input, StandardCharsets.UTF_8));
+            HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000);
+
+            if (response.code != 200) {
+                return new Result(400);
+            }
+            List<String> suggestions = new ArrayList<>();
+            BingSuggestionResponse suggestionResponse = new Gson().fromJson(response.data, BingSuggestionResponse.class);
+            for (BingSuggestionResponse.ResultNode node : suggestionResponse.AS.Results) {
+                for (BingSuggestionResponse.Suggestion suggestion : node.Suggests) {
+                    if (!suggestion.Txt.equals(input)) {
+                        suggestions.add(suggestion.Txt);
+                    }
+                }
+            }
+            Nlog.info("Successfully handled input = '" + input + "' used " + (System.currentTimeMillis() - beginTime) + "ms");
+            return generateSuccessResult(seq, input, suggestions);
+        } catch (Exception e) {
+            Nlog.info("Handling input = '" + input + "' get Exception: " + e.toString());
+            return new Result(400);
+        }
+    }
+
+    @Deprecated
+    // FIXME 乱码
+    private Result getSuggestionsByEngineBaidu(long seq, String input) {
         try {
             long beginTime = System.currentTimeMillis();
 
-            String url = GOOGLE_SUGGESTIONS_API_PREFIX + input;
-            URL obj = new URL(url);
-            Proxy proxy = new Proxy(java.net.Proxy.Type.HTTP, new InetSocketAddress(LOCAL_HOST, PROXY_PORT));
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection(proxy);
-            con.setRequestMethod("GET");
-            con.setConnectTimeout(1000);
+            URL obj = new URL(BAIDU_SUGGESTIONS_API_PREFIX + URLEncoder.encode(input, StandardCharsets.UTF_8));
+            HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000);
 
-            int responseCode = con.getResponseCode();
-            if (responseCode != 200) {
-                Nlog.info("Handled input = '" + input + "' error, get responseCode = " + responseCode);
+            if (response.code != 200) {
+                // FIXME 代码相同部分合并合并
                 return new Result(400);
             }
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String line;
-            StringBuilder sb = new StringBuilder();
-            while ((line = in.readLine()) != null) {
-                sb.append(line);
+            String data = response.data;
+
+            // 转码
+            // FIXME 乱码～～～～
+
+            List<String> suggestions = new ArrayList<>();
+            Pattern pattern = Pattern.compile("\\[(.*?)]");
+            Matcher matcher = pattern.matcher(data);
+            if (matcher.find()) {
+                data = matcher.group(1);
             }
-            in.close();
+            pattern = Pattern.compile("\"(.*?)\"");
+            matcher = pattern.matcher(data);
+            while (matcher.find()) {
+                suggestions.add(matcher.group(1));
+            }
+            Nlog.info("Successfully handled input = '" + input + "' used " + (System.currentTimeMillis() - beginTime) + "ms");
+            return generateSuccessResult(seq, input, suggestions);
+        } catch (Exception e) {
+            Nlog.info("Handling input = '" + input + "' get Exception: " + e.toString());
+            return new Result(400);
+        }
+    }
+
+    private Result getSuggestionsByEngineGoogle(long seq, String input) {
+        try {
+            long beginTime = System.currentTimeMillis();
+
+            URL obj = new URL(GOOGLE_SUGGESTIONS_API_PREFIX + URLEncoder.encode(input, StandardCharsets.UTF_8));
+            HttpUtil.HttpResponse response = HttpUtil.get(obj, true,1000);
+            if (response.code != 200) {
+                return new Result(400);
+            }
 
             // 解析并存储
-            String xmlStr = sb.toString();
+            String xmlStr = response.data;
             List<String> suggestions = new ArrayList<>();
             Element rootElement = DocumentHelper.parseText(xmlStr).getRootElement();
             List<Element> suggestionElements = rootElement.elements("CompleteSuggestion");
             for (Element e : suggestionElements) {
                 suggestions.add(e.element("suggestion").attributeValue("data"));
             }
-            Result result = new Result(200);
-            result.data = new SearchSuggestions();
-            ((SearchSuggestions) result.data).input = input;
-            ((SearchSuggestions) result.data).suggestions = suggestions;
-
             Nlog.info("Successfully handled input = '" + input + "' used " + (System.currentTimeMillis() - beginTime) + "ms");
-
-            return result;
+            return generateSuccessResult(seq, input, suggestions);
 
         } catch (Exception e) {
             Nlog.info("Handling input = '" + input + "' get Exception: " + e.toString());
             return new Result(400);
         }
+    }
+
+    private Result generateSuccessResult(long seq, String input, List<String> suggestions) {
+        Result result = new Result(200);
+        result.data = new SearchSuggestions();
+        ((SearchSuggestions) result.data).seq = seq;
+        ((SearchSuggestions) result.data).input = input;
+        ((SearchSuggestions) result.data).suggestions = suggestions;
+        return result;
     }
 }
