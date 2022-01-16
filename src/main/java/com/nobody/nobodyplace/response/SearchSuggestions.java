@@ -5,6 +5,7 @@ import java.util.List;
 
 public class SearchSuggestions extends Data {
 
+    public long seq = 0;
     public String input = "";
     public List<String> suggestions = new ArrayList<>();
 
