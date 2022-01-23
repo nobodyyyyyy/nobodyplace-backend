@@ -39,7 +39,7 @@ public class SearchSuggestionController {
 
     @CrossOrigin
     @ResponseBody
-    @GetMapping(value = NobodyPlaceAPI.WEB_SEARCH)
+    @GetMapping(value = NobodyPlaceAPI.WEB_SEARCH_SUGGESTIONS)
     public Result getSearchSuggestions(String engine, long seq, String input) {
         switch (engine) {
             case SUGGESTION_ENGINE_BING:
