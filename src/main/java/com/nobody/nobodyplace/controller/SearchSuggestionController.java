@@ -61,7 +61,7 @@ public class SearchSuggestionController {
             String url = BING_SUGGESTIONS_API_PREFIX + input;
 
             URL obj = new URL(BING_SUGGESTIONS_API_PREFIX + URLEncoder.encode(input, StandardCharsets.UTF_8));
-            HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000);
+            HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000, "");
 
             if (response.code != 200) {
                 return new Result(400);
@@ -90,7 +90,7 @@ public class SearchSuggestionController {
             long beginTime = System.currentTimeMillis();
 
             URL obj = new URL(BAIDU_SUGGESTIONS_API_PREFIX + URLEncoder.encode(input, StandardCharsets.UTF_8));
-            HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000);
+            HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000, "");
 
             if (response.code != 200) {
                 // FIXME 代码相同部分合并合并
@@ -125,7 +125,7 @@ public class SearchSuggestionController {
             long beginTime = System.currentTimeMillis();
 
             URL obj = new URL(GOOGLE_SUGGESTIONS_API_PREFIX + URLEncoder.encode(input, StandardCharsets.UTF_8));
-            HttpUtil.HttpResponse response = HttpUtil.get(obj, true,1000);
+            HttpUtil.HttpResponse response = HttpUtil.get(obj, true,1000, "");
             if (response.code != 200) {
                 return new Result(400);
             }

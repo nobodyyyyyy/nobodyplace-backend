@@ -4,8 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.lang.StringBuilder;
 import java.io.InputStreamReader;
 import java.net.*;
+import java.util.Map;
 
 public class HttpUtil {
 
@@ -15,20 +17,31 @@ public class HttpUtil {
 
     private static final Logger Nlog = LoggerFactory.getLogger(HttpUtil.class);
 
+    public static String setUrlParams(String url, Map<String, String> params) {
+        StringBuilder sb = new StringBuilder(url);
+        if (params != null) {
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                sb.append("&");
+                sb.append(entry.getKey());
+                sb.append("=");
+                sb.append(entry.getValue());
+            }
+        }
+        return sb.toString();
+    }
+
     /**
      * http 通用 get 方法
      * @param url 请求 url
      * @param needProxy 是否需要代理
      * @param timeout 超时时间
-     * @param args 其他传参
      * @return 回包，包括状态码和拉回的内容
      */
-    public static HttpResponse get(URL url, boolean needProxy, int timeout, String... args) {
+    public static HttpResponse get(URL url, boolean needProxy, int timeout, String cookie) {
         // FIXME 子线程需要吗？
         int responseCode = -1;
         String data;
         try {
-            
             HttpURLConnection con;
             if (needProxy) {
                 Proxy proxy = new Proxy(java.net.Proxy.Type.HTTP, new InetSocketAddress(LOCAL_HOST, PROXY_PORT));
@@ -36,8 +49,10 @@ public class HttpUtil {
             } else {
                 con = (HttpURLConnection) url.openConnection();
             }
-//            con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-//            con.setRequestProperty("Accept", "application/json");
+            if (cookie != null && !cookie.isEmpty()) {
+                con.setRequestProperty("Cookie", cookie);
+            }
+
             con.setRequestMethod("GET");
             con.setConnectTimeout(timeout);
 
