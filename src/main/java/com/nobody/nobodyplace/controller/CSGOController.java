@@ -2,6 +2,7 @@ package com.nobody.nobodyplace.controller;
 
 import com.google.gson.Gson;
 import com.nobody.nobodyplace.gson.csgo.MarketItemInfo;
+import com.nobody.nobodyplace.service.CsgoService;
 import com.nobody.nobodyplace.utils.HttpUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,8 +12,10 @@ import java.net.URL;
 import java.util.HashMap;
 
 @Controller
-public class CSGOInfoController {
-    private static final Logger Nlog = LoggerFactory.getLogger(CSGOInfoController.class);
+public class CSGOController {
+    private static final Logger Nlog = LoggerFactory.getLogger(CSGOController.class);
+
+    final CsgoService service;
 
     private static String cookie;
 
@@ -20,6 +23,9 @@ public class CSGOInfoController {
     private static final String API_GET_ITEM_PAST_MONTH_TRANSACTION = "https://buff.163.com/api/market/goods/price_history/buff?game=csgo";
     private static final String API_GET_ITEM_RECENT_TRANSACTION = "https://buff.163.com/api/market/goods/bill_order?game=csgo";
 
+    public CSGOController(CsgoService service) {
+        this.service = service;
+    }
 
     private void getCurrentCookie() {
 
