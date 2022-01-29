@@ -21,7 +21,7 @@ public class CsgoUserTransaction {
     @Id
     private Integer transactTime;
 
-    private Float transactPrize;
+    private Float transactPrice;
 
     private Byte transactType;
 
@@ -41,12 +41,12 @@ public class CsgoUserTransaction {
         this.transactTime = transactTime;
     }
 
-    public Float getTransactPrize() {
-        return transactPrize;
+    public Float getTransactPrice() {
+        return transactPrice;
     }
 
-    public void setTransactPrize(Float transactPrize) {
-        this.transactPrize = transactPrize;
+    public void setTransactPrice(Float transactPrice) {
+        this.transactPrice = transactPrice;
     }
 
     public Byte getTransactType() {

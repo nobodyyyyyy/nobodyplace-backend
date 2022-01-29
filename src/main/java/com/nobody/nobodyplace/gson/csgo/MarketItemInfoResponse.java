@@ -2,7 +2,7 @@ package com.nobody.nobodyplace.gson.csgo;
 
 import java.util.List;
 
-public class MarketItemInfo {
+public class MarketItemInfoResponse {
 
     public static final String STATUS_OK = "ok";
 

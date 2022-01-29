@@ -16,7 +16,7 @@ public class CsgoUserProperty {
     @Id
     private Integer itemId;
 
-    private Float boughtPrize;
+    private Float boughtPrice;
 
     public Integer getItemId() {
         return itemId;
@@ -26,11 +26,11 @@ public class CsgoUserProperty {
         this.itemId = itemId;
     }
 
-    public Float getBoughtPrize() {
-        return boughtPrize;
+    public Float getBoughtPrice() {
+        return boughtPrice;
     }
 
-    public void setBoughtPrize(Float boughtPrize) {
-        this.boughtPrize = boughtPrize;
+    public void setBoughtPrice(Float boughtPrice) {
+        this.boughtPrice = boughtPrice;
     }
 }

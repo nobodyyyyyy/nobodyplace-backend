@@ -17,6 +17,10 @@ public class HttpUtil {
 
     private static final Logger Nlog = LoggerFactory.getLogger(HttpUtil.class);
 
+    public static String setUrlParam(String url, Object key, Object value) {
+        return url + "&" + key + "=" + value;
+    }
+
     public static String setUrlParams(String url, Map<String, String> params) {
         StringBuilder sb = new StringBuilder(url);
         if (params != null) {
@@ -52,9 +56,10 @@ public class HttpUtil {
             if (cookie != null && !cookie.isEmpty()) {
                 con.setRequestProperty("Cookie", cookie);
             }
-
+            con.setInstanceFollowRedirects(false);
             con.setRequestMethod("GET");
             con.setConnectTimeout(timeout);
+//            con.setRequestProperty("Content-Type", "application/json");
 
             responseCode = con.getResponseCode();
             BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));

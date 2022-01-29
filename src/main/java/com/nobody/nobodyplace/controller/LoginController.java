@@ -26,7 +26,7 @@ public class LoginController {
     }
 
     @CrossOrigin
-    @PostMapping(value = NobodyPlaceAPI.LOGIN)
+    @PostMapping(value = API.LOGIN)
     @ResponseBody
     public Result login(@RequestBody User requestUser, HttpSession session) {
         String username = requestUser.getUsername();

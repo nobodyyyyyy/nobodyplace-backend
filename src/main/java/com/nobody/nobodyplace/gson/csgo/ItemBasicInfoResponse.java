@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * id 和 商品名的绑定回包
  */
-public class ItemBasicInfo {
+public class ItemBasicInfoResponse {
 
     public static final String STATUS_OK = "ok";
 

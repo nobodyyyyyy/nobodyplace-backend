@@ -22,17 +22,17 @@ public class CountDownController {
     }
 
     @CrossOrigin
-    @PostMapping(value = NobodyPlaceAPI.ADD_COUNTDOWN)
+    @PostMapping(value = API.ADD_COUNTDOWN)
     @ResponseBody
     public Result addCountDown(@RequestBody CountDown countDown) {
-        return addOrUpdateCountDown(NobodyPlaceAPI.ADD_COUNTDOWN, countDown);
+        return addOrUpdateCountDown(API.ADD_COUNTDOWN, countDown);
     }
 
     @CrossOrigin
-    @PostMapping(value = NobodyPlaceAPI.UPDATE_COUNTDOWN)
+    @PostMapping(value = API.UPDATE_COUNTDOWN)
     @ResponseBody
     public Result updateCountDown(@RequestBody CountDown countDown) {
-        return addOrUpdateCountDown(NobodyPlaceAPI.UPDATE_COUNTDOWN, countDown);
+        return addOrUpdateCountDown(API.UPDATE_COUNTDOWN, countDown);
     }
 
     private Result addOrUpdateCountDown(String action, CountDown countDown) {
@@ -47,21 +47,21 @@ public class CountDownController {
 
     @CrossOrigin
     @ResponseBody
-    @GetMapping(value = NobodyPlaceAPI.GET_COUNTDOWNS)
+    @GetMapping(value = API.GET_COUNTDOWNS)
     public Result getAllCountDowns() {
         List<CountDown> countDowns;
         try {
             countDowns = service.getAllCountDowns();
         } catch (Exception e) {
             Nlog.info("getAllCountDowns... err = " + e);
-            return generateResult(404, NobodyPlaceAPI.GET_COUNTDOWNS, "getAllCountDowns err", null);
+            return generateResult(404, API.GET_COUNTDOWNS, "getAllCountDowns err", null);
         }
-        return generateResult(200, NobodyPlaceAPI.GET_COUNTDOWNS, "success", countDowns);
+        return generateResult(200, API.GET_COUNTDOWNS, "success", countDowns);
     }
 
     @CrossOrigin
     @ResponseBody
-    @PostMapping(value = NobodyPlaceAPI.DELETE_COUNTDOWN)
+    @PostMapping(value = API.DELETE_COUNTDOWN)
     public Result deleteCountDown(@RequestBody String id) {
         try {
             // we get id like 1293812038019= ends with '=' who knows why ?
@@ -73,9 +73,9 @@ public class CountDownController {
             }
         } catch (Exception e) {
             Nlog.info("deleteCountDown... err = " + e);
-            return generateResult(404, NobodyPlaceAPI.DELETE_COUNTDOWN, "deleteCountDown err", null);
+            return generateResult(404, API.DELETE_COUNTDOWN, "deleteCountDown err", null);
         }
-        return generateResult(200, NobodyPlaceAPI.DELETE_COUNTDOWN, "success", null);
+        return generateResult(200, API.DELETE_COUNTDOWN, "success", null);
     }
 
     private Result generateResult(int code, String action, String msg, List<CountDown> countDowns) {

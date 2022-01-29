@@ -2,6 +2,7 @@ package com.nobody.nobodyplace.entity.csgo;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.thymeleaf.util.TextUtils;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -21,6 +22,9 @@ public class CsgoItem {
 
     private String itemName;
 
+    /**
+     * 0:崭新出场 1:略有磨损 2:久经沙场 3:破损不堪 4:战痕累累
+     */
     private Byte itemWearType;
 
     private String displayUrl;
@@ -59,6 +63,38 @@ public class CsgoItem {
 
     public void setItemWearType(Byte itemWearType) {
         this.itemWearType = itemWearType;
+    }
+
+    public static byte getItemWearType4Storage(String itemWearType) {
+        if (TextUtils.equals(false, itemWearType, "崭新出场")) {
+            return 0;
+        } else if (TextUtils.equals(false, itemWearType, "崭新出场")) {
+            return 1;
+        } else if (TextUtils.equals(false, itemWearType, "久经沙场")) {
+            return 2;
+        } else if (TextUtils.equals(false, itemWearType, "破损不堪")) {
+            return 3;
+        } else if (TextUtils.equals(false, itemWearType, "战痕累累")) {
+            return 4;
+        } else {
+            return -1;
+        }
+    }
+
+    public static String getItemWearTypeDesc(Byte itemWearType) {
+        if (itemWearType == 0) {
+            return "崭新出场";
+        } else if (itemWearType == 1) {
+            return "略有磨损";
+        } else if (itemWearType == 2) {
+            return "久经沙场";
+        } else if (itemWearType == 3) {
+            return "破损不堪";
+        } else if (itemWearType == 4) {
+            return "战痕累累";
+        } else {
+            return "";
+        }
     }
 
     public String getDisplayUrl() {

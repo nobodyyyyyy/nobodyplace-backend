@@ -24,7 +24,7 @@ public class CsgoDetailedTransaction {
     @Id
     private String assetid;
 
-    private Float soldPrize;
+    private Float soldPrice;
 
     private String itemWear;
 
@@ -56,12 +56,12 @@ public class CsgoDetailedTransaction {
         this.assetid = assetid == null ? null : assetid.trim();
     }
 
-    public Float getSoldPrize() {
-        return soldPrize;
+    public Float getSoldPrice() {
+        return soldPrice;
     }
 
-    public void setSoldPrize(Float soldPrize) {
-        this.soldPrize = soldPrize;
+    public void setSoldPrice(Float soldPrice) {
+        this.soldPrice = soldPrice;
     }
 
     public String getItemWear() {
