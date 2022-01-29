@@ -1,15 +1,16 @@
 package com.nobody.nobodyplace.service;
 
-import com.nobody.nobodyplace.controller.SearchSuggestionController;
 import com.nobody.nobodyplace.dao.csgo.*;
 import com.nobody.nobodyplace.entity.csgo.CsgoPriceHistory;
+import com.nobody.nobodyplace.requestbody.RequestItemHistoryPrice;
 import com.nobody.nobodyplace.response.csgo.ItemHistoryPrice;
-import com.nobody.nobodyplace.response.csgo.PriceHistoryResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -48,13 +49,29 @@ public class CsgoService {
                 entities.add(new CsgoPriceHistory(itemId, (int) (node.get(0) / 1000), node.get(1)));
             } catch (Exception e) {
                 Nlog.info("batchAddPriceHistory... err: " + e.toString());
-                // 以免 api 回数据格式改变
+                // 以免 api 回包数据格式改变
             }
         }
         priceHistoryDAO.saveAll(entities);
     }
 
-//    public List<ItemHistoryPrice> get
+    @Transactional()
+    public List<ItemHistoryPrice> batchGetPriceHistories(List<RequestItemHistoryPrice> requests) {
+        List<ItemHistoryPrice> ret = new ArrayList<>();
+        if (requests == null || requests.isEmpty()) {
+            return ret;
+        }
+        for (RequestItemHistoryPrice request : requests) {
+            List<CsgoPriceHistory> histories = priceHistoryDAO.findAllByItemIdEqualsAndTransactTimeBetweenOrderByTransactTime(request.id, request.from, request.to);
+            ItemHistoryPrice item = new ItemHistoryPrice();
+            item.id = request.id;
+            for (CsgoPriceHistory history : histories) {
+                item.prices.add((Arrays.asList(history.getTransactTime(), history.getSoldPrice())));
+            }
+            ret.add(item);
+        }
+        return ret;
+    }
 
 
     // ---------- 商品详细信息相关 item ----------

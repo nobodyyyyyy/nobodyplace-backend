@@ -1,5 +1,6 @@
 package com.nobody.nobodyplace.response.csgo;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -7,5 +8,5 @@ import java.util.List;
  */
 public class ItemHistoryPrice {
     public int id;
-    public List<List<Float>> prices;
+    public List<List<Object>> prices = new ArrayList<>();
 }

@@ -122,7 +122,6 @@ public class CSGOController {
             requestQueue.put(new DelayElement(delayTime, request.id));
             delayTime += 1000;
         }
-
         synchronized (requestLock) {
             while (!requestQueue.isEmpty()){
                 int itemId = 0;
@@ -147,23 +146,16 @@ public class CSGOController {
                 }
             }
         }
-
         // response
         // [{id: id, price: [[time0, price0], [time1, price1], ...]}, ...]
         // 其实我觉得历史价格请求，前端过来的时候应该是一个个的，因为它展示数据也是一个个去展示的
         // 但是可以说第一次打开网页的时候统一全部更新，避免漏了一些没记录的
         // 让我想到在腾讯做的一个需求，明明标签图标只有一个，愣是要扩展做成多个的，说是为了可扩展，无语子
         // 这个接口先写成批量的 01/29/2022
-        List<ItemHistoryPrice> prices = new ArrayList<>();
-        // todo
-
-
         Result result = new Result(200);
         result.data = new PriceHistoryResponse();
-        ((PriceHistoryResponse) (result.data)).infos = new ArrayList<>();
-        // todo
-
-        return new Result(200);
+        ((PriceHistoryResponse) (result.data)).infos = service.batchGetPriceHistories(requestItems);
+        return result;
     }
 
     /**
