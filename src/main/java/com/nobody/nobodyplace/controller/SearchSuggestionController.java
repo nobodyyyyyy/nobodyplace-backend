@@ -148,7 +148,7 @@ public class SearchSuggestionController {
     }
 
     private Result generateSuccessResult(long seq, String input, List<String> suggestions) {
-        Result result = new Result(200);
+        Result result = new Result(0);
         result.data = new SearchSuggestions();
         ((SearchSuggestions) result.data).seq = seq;
         ((SearchSuggestions) result.data).input = input;

@@ -33,6 +33,8 @@ public class CsgoItem {
 
     private Boolean isStatTrak;
 
+    private String desc;
+
     public Integer getItemId() {
         return itemId;
     }
@@ -119,5 +121,13 @@ public class CsgoItem {
 
     public void setIsStatTrak(Boolean isStatTrak) {
         this.isStatTrak = isStatTrak;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
     }
 }

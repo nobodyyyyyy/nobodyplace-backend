@@ -42,7 +42,7 @@ public class CountDownController {
             Nlog.info("addOrUpdateCountDown... action = " + action + ", err = " + e);
             return generateResult(404, action, "addOrUpdateCountDown err", null);
         }
-        return generateResult(200, action, "success", null);
+        return generateResult(0, action, "success", null);
     }
 
     @CrossOrigin
@@ -56,7 +56,7 @@ public class CountDownController {
             Nlog.info("getAllCountDowns... err = " + e);
             return generateResult(404, API.GET_COUNTDOWNS, "getAllCountDowns err", null);
         }
-        return generateResult(200, API.GET_COUNTDOWNS, "success", countDowns);
+        return generateResult(0, API.GET_COUNTDOWNS, "success", countDowns);
     }
 
     @CrossOrigin
@@ -75,7 +75,7 @@ public class CountDownController {
             Nlog.info("deleteCountDown... err = " + e);
             return generateResult(404, API.DELETE_COUNTDOWN, "deleteCountDown err", null);
         }
-        return generateResult(200, API.DELETE_COUNTDOWN, "success", null);
+        return generateResult(0, API.DELETE_COUNTDOWN, "success", null);
     }
 
     private Result generateResult(int code, String action, String msg, List<CountDown> countDowns) {
@@ -83,7 +83,7 @@ public class CountDownController {
         result.data = new CountDownData();
         ((CountDownData) (result.data)).action = action;
         ((CountDownData) (result.data)).countDowns = countDowns;
-        if (code == 200) {
+        if (code == 0) {
             Nlog.info("Successfully handle action = " + action);
         }
         return result;

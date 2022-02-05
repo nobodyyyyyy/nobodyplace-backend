@@ -2,10 +2,7 @@ package com.nobody.nobodyplace.entity.csgo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @IdClass(CsgoDetailedTransactionKey.class)

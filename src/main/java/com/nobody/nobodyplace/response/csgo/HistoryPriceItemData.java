@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 与 PriceHistoryResponse 相关，与前端的格式约定
+ * 与 PriceHistoryData 相关，与前端的格式约定
  */
-public class ItemHistoryPrice {
+public class HistoryPriceItemData {
     public int id;
+    public int from;
+    public int to;
     public List<List<Object>> prices = new ArrayList<>();
 }

@@ -1,11 +1,16 @@
 package com.nobody.nobodyplace.controller;
 
 import com.google.gson.Gson;
+import com.nobody.nobodyplace.entity.csgo.CsgoItem;
+import com.nobody.nobodyplace.entity.csgo.CsgoUserTransaction;
 import com.nobody.nobodyplace.gson.csgo.MarketHistoryItemInfoResponse;
+import com.nobody.nobodyplace.requestbody.RequestAddUserTransaction;
+import com.nobody.nobodyplace.requestbody.RequestGetIncomeAddup;
+import com.nobody.nobodyplace.requestbody.RequestGetUserTransaction;
 import com.nobody.nobodyplace.requestbody.RequestItemHistoryPrice;
 import com.nobody.nobodyplace.response.Result;
-import com.nobody.nobodyplace.response.csgo.ItemHistoryPrice;
-import com.nobody.nobodyplace.response.csgo.PriceHistoryResponse;
+import com.nobody.nobodyplace.response.csgo.PriceHistoryData;
+import com.nobody.nobodyplace.response.csgo.UserTransactionData;
 import com.nobody.nobodyplace.service.CommonStorageService;
 import com.nobody.nobodyplace.service.CsgoService;
 import com.nobody.nobodyplace.utils.HttpUtil;
@@ -30,7 +35,9 @@ public class CSGOController {
     private static final Logger Nlog = LoggerFactory.getLogger(CSGOController.class);
 
     private static final String API_GET_ITEM_ID = "https://buff.163.com/api/market/search/suggest?game=csgo";
+    private static final String API_GET_ITEM_PAST_7_DAY_TRANSACTION = "https://buff.163.com/api/market/goods/price_history/buff?game=csgo&currency=CNY&days=7";
     private static final String API_GET_ITEM_PAST_MONTH_TRANSACTION = "https://buff.163.com/api/market/goods/price_history/buff?game=csgo&currency=CNY&days=30";
+    private static final String API_GET_ITEM_PAST_6_MONTH_TRANSACTION = "https://buff.163.com/api/market/goods/price_history/buff?game=csgo&currency=CNY&days=180";
     private static final String API_GET_ITEM_RECENT_TRANSACTION = "https://buff.163.com/api/market/goods/bill_order?game=csgo";
 
     final CsgoService service;
@@ -42,6 +49,13 @@ public class CSGOController {
     private final Object requestLock = new Object(); // 同时只能存在一个请求
 
     /**
+     * itemId 和实体类的映射缓存
+     */
+    private final ConcurrentHashMap<Integer, CsgoItem> itemCache;
+
+
+
+    /**
      * 历史价格一天只刷新一次
      * k: item_id v: last updated time
      */
@@ -50,6 +64,7 @@ public class CSGOController {
     public CSGOController(CsgoService service, CommonStorageService cookieService) {
         this.service = service;
         this.cookieService = cookieService;
+        this.itemCache = new ConcurrentHashMap<>();
         this.historyPriceUpdateMap = new ConcurrentHashMap<>();
     }
 
@@ -85,22 +100,48 @@ public class CSGOController {
     }
 
     @CrossOrigin
-    @PostMapping(value = API.TEST)
     @ResponseBody
-    public Result test() {
-        if (hasValidCookie()) {
-            Nlog.info("ok");
-            return new Result(200);
+    @PostMapping(value = API.BATCH_GET_ITEM_DETAIL)
+    public Result batchGetItemDetail() {
+        return new Result(0);
+    }
+
+    /**
+     * 批量获取 itemId 对应的商品详情。
+     * 调用该接口，说明 itemId 已经存在于 db，不然拿不到 itemId
+     * @param requestList [itemId0, itemId1, ...]
+     * @return 商品详情列表
+     */
+    private List<CsgoItem> innerBatchGetItemDetail(List<Integer> requestList) {
+        List<CsgoItem> ret = new ArrayList<>();
+        List<Integer> DBSearchRequests = new ArrayList<>();
+        for (int itemId : requestList) {
+            if (itemCache.containsKey(itemId)) {
+                ret.add(itemCache.get(itemId));
+            } else {
+                DBSearchRequests.add(itemId);
+            }
         }
-        Nlog.info("not ok");
-        return new Result();
+        List<CsgoItem> searchResult = service.batchGetItemInfo(DBSearchRequests);
+        for (CsgoItem item : searchResult) {
+            itemCache.put(item.getItemId(), item);
+            ret.add(item);
+        }
+        return ret;
+    }
+
+    @CrossOrigin
+    @ResponseBody
+    @GetMapping(value = API.GET_USER_PROPERTY)
+    public Result getUserProperty() {
+        return new Result(0);
     }
 
     /**
      * 获取 item 对应的历史记录价格<br/>
      * 数据量：一个商品一个月大概200多条
      * @param requestItems [{id: id, from: 开始时间戳, to: 结束时间戳}]
-     * @return Result
+     * @return Result data: {@link PriceHistoryData}
      */
     @CrossOrigin
     @ResponseBody
@@ -127,7 +168,8 @@ public class CSGOController {
                 int itemId = 0;
                 try {
                     itemId = requestQueue.take().itemId;
-                    String requestUrl = HttpUtil.setUrlParam(API_GET_ITEM_PAST_MONTH_TRANSACTION, "goods_id", itemId);
+                    // todo 根据上次查询时间确定 7 天和或 30 天的粒度
+                    String requestUrl = HttpUtil.setUrlParam(API_GET_ITEM_PAST_7_DAY_TRANSACTION, "goods_id", itemId);
                     HttpUtil.HttpResponse response = HttpUtil.get(new URL(requestUrl), false, 10000, cookie);
                     MarketHistoryItemInfoResponse historyItemInfoResponse =
                             new Gson().fromJson(response.data, MarketHistoryItemInfoResponse.class);
@@ -152,10 +194,52 @@ public class CSGOController {
         // 但是可以说第一次打开网页的时候统一全部更新，避免漏了一些没记录的
         // 让我想到在腾讯做的一个需求，明明标签图标只有一个，愣是要扩展做成多个的，说是为了可扩展，无语子
         // 这个接口先写成批量的 01/29/2022
-        Result result = new Result(200);
-        result.data = new PriceHistoryResponse();
-        ((PriceHistoryResponse) (result.data)).infos = service.batchGetPriceHistories(requestItems);
+        Result result = new Result(0);
+        result.data = new PriceHistoryData();
+        ((PriceHistoryData) (result.data)).infos = service.batchGetPriceHistories(requestItems);
         return result;
+    }
+
+    /**
+     * 添加用户交易记录
+     * @param request {@link RequestAddUserTransaction}
+     * @return 基本状态
+     */
+    @CrossOrigin
+    @ResponseBody
+    @PostMapping(value = API.ADD_USER_TRANSACTION)
+    public Result addUserTransaction(@RequestBody RequestAddUserTransaction request) {
+        // 默认请求有效
+        try {
+            service.addTransaction(request);
+            Nlog.info("addUserTransaction... Successfully added user transaction: " + request);
+            return new Result(0);
+        } catch (Exception e) {
+            Nlog.info("addUserTransaction... failed, err = " + e.toString());
+        }
+        return new Result(404);
+    }
+
+    /**
+     * 查询用户交易记录
+     * @param request {@link RequestGetUserTransaction}
+     * @return 见 API 文档
+     */
+    @CrossOrigin
+    @ResponseBody
+    @PostMapping(value = API.GET_USER_TRANSACTION)
+    public Result getUserTransaction(@RequestBody RequestGetUserTransaction request) {
+        if (request.from > request.to) {
+            return new Result(400, "Invalid request body");
+        }
+        try {
+            List<CsgoUserTransaction> transactions = service.getTransaction(request);
+            Result result = new Result(0);
+            result.data = new UserTransactionData(transactions);
+            return result;
+        } catch (Exception e) {
+            return new Result(400);
+        }
     }
 
     /**
@@ -185,37 +269,6 @@ public class CSGOController {
         @Override
         public int compareTo(Delayed o) {
             return Long.compare(this.getDelay(TimeUnit.MILLISECONDS), o.getDelay(TimeUnit.MILLISECONDS));
-        }
-    }
-
-    public static void main(String[] args) {
-        try {
-//            String url = "https://buff.163.com/api/market/goods/bill_order?game=csgo";
-//            url = HttpUtil.setUrlParams(url, new HashMap<>(){{put("goods_id", "33812");}});
-//
-//            String cookie = "csrf_token=ImM0NWRmNDI4NTI1YzMyMjkzNjI4NjJiYTlkYTc0YmJkNDZkOTUxNmUi.FNRDwA.TzO9-UlsyyOXo-yIt0Wqo9Oj-Bs; session=1-z9Y7C_33ym-QKhZL7JG0vKgiGqYYLexIOvCf8-xIrjTL2037018358; Path=/; HttpOnly;";
-//            URL obj = new URL(url);
-//
-//            HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000, cookie);
-//
-//            if (response.code != 200) {
-//                return;
-//            }
-//            MarketItemInfoResponse infos = new Gson().fromJson(response.data, MarketItemInfoResponse.class);
-//            int i = 1 + 1;
-
-//            try {
-//                HttpUtil.HttpResponse response = HttpUtil.get(new URL(URL_COOKIE_CHECKER), false, 2000, "");
-////                return cookie;
-//                int a = 1;
-//                a = 2;
-//            } catch (Exception e) {
-////                return null;
-//            }
-//            int  a = 1;
-//            a  = 2;
-        } catch (Exception e) {
-            System.out.println(e);
         }
     }
 }

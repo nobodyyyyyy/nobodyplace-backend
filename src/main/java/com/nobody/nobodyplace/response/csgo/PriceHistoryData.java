@@ -4,6 +4,6 @@ import com.nobody.nobodyplace.response.Data;
 
 import java.util.List;
 
-public class PriceHistoryResponse extends Data {
-    public List<ItemHistoryPrice> infos;
+public class PriceHistoryData extends Data {
+    public List<HistoryPriceItemData> infos;
 }

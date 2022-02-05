@@ -14,24 +14,22 @@ public class API {
     public static final String UPDATE_COUNTDOWN = COUNTDOWN + "/update";
     public static final String DELETE_COUNTDOWN = COUNTDOWN + "/delete";
 
-    // for testing
-    public static final String TEST = "/api/test";
-
     // csgo related
     private static final String CSGO = "/api/csgo";
 
     /**
      * post
      * 入参: cookie
-     * 出参: none
+     * 出参: {@link com.nobody.nobodyplace.response.Result 没有 data}
      */
     public static final String UPDATE_BUFF_COOKIE = CSGO + "/update_cookie";
 
     /**
-     * post
+     * get
      * 获取用户（我）所持有的物品列表
      * 入参: none
-     * 出参: [id0, id1, ...]
+     * 出参: infos: [{@link com.nobody.nobodyplace.entity.csgo.CsgoItem}, ...]
+     *
      */
     public static final String GET_USER_PROPERTY = CSGO + "/get_user_property";
 
@@ -55,7 +53,7 @@ public class API {
      * post
      * （批量）获取物品 id 对应的历史售价
      * 入参: [{id: id, from: 开始时间戳, to: 结束时间戳}, ...]
-     * 出参: [{id: id, price: [[time0, price0], [time1, price1], ...]}, ...]
+     * 出参: prices: [{id: id, price: [[time0, price0], [time1, price1], ...]}, ...]
      */
     public static final String BATCH_GET_ITEM_HISTORY_PRICE = CSGO + "/batch_get_item_history_price";
 
@@ -67,6 +65,35 @@ public class API {
      */
     public static final String GET_ITEM_CURRENT_PRICE = CSGO + "/get_item_current_price";
 
-    // TODO user 交易相关 api 约定
+    /**
+     * post
+     * （单个）添加交易记录，此操作会影响到 1）收入状态变化；2）交易流水变化
+     * 目前回包只会提供更新总收入状态的 data，所以查看流水详情的时候要调相应接口更新
+     * 入参: {id: id, time: 交易时间戳（秒），精确到天就可以了, price: 涉及金额, type: 0:租, 1:卖}
+     * 出参: 当天的累计 {from: today, to: today, addUps: [{@link com.nobody.nobodyplace.entity.csgo.CsgoIncomeAddup}]}
+     */
+    public static final String ADD_USER_TRANSACTION = CSGO + "/add_user_transaction";
+
+    /**
+     * post
+     * 查看用户交易记录
+     * 入参: {from: 开始时间戳（秒）, to: 结束}
+     * 出参: records: [
+     *  {
+            {@link com.nobody.nobodyplace.entity.csgo.CsgoUserTransaction}
+     *  },
+     *  ...
+     * ]
+     */
+    public static final String GET_USER_TRANSACTION = CSGO + "/get_user_transaction";
+
+    /**
+     * post
+     * 获取累计收入状态
+     * 入参: {from: 开始时间戳, to: 结束时间戳, type: 0租赁,1卖出,2潜在,3总共}
+     * 出参: {from: from, to: to, addUps: [{@link com.nobody.nobodyplace.entity.csgo.CsgoIncomeAddup}, ...]}
+     */
+    public static final String GET_INCOME_STATUS = CSGO + "/get_income_status";
+
 
 }

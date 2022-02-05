@@ -1,9 +1,13 @@
 package com.nobody.nobodyplace.service;
 
 import com.nobody.nobodyplace.dao.csgo.*;
+import com.nobody.nobodyplace.entity.csgo.CsgoItem;
 import com.nobody.nobodyplace.entity.csgo.CsgoPriceHistory;
+import com.nobody.nobodyplace.entity.csgo.CsgoUserTransaction;
+import com.nobody.nobodyplace.requestbody.RequestAddUserTransaction;
+import com.nobody.nobodyplace.requestbody.RequestGetUserTransaction;
 import com.nobody.nobodyplace.requestbody.RequestItemHistoryPrice;
-import com.nobody.nobodyplace.response.csgo.ItemHistoryPrice;
+import com.nobody.nobodyplace.response.csgo.HistoryPriceItemData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -42,6 +46,7 @@ public class CsgoService {
 
     // ---------- 市场历史交易交易相关 priceHistory ----------
 
+    @Transactional
     public void batchAddPriceHistory(int itemId, List<List<Float>> historyList) {
         List<CsgoPriceHistory> entities = new ArrayList<>();
         for (List<Float> node : historyList) {
@@ -55,16 +60,19 @@ public class CsgoService {
         priceHistoryDAO.saveAll(entities);
     }
 
-    @Transactional()
-    public List<ItemHistoryPrice> batchGetPriceHistories(List<RequestItemHistoryPrice> requests) {
-        List<ItemHistoryPrice> ret = new ArrayList<>();
+    @Transactional
+    public List<HistoryPriceItemData> batchGetPriceHistories(List<RequestItemHistoryPrice> requests) {
+        List<HistoryPriceItemData> ret = new ArrayList<>();
         if (requests == null || requests.isEmpty()) {
             return ret;
         }
         for (RequestItemHistoryPrice request : requests) {
-            List<CsgoPriceHistory> histories = priceHistoryDAO.findAllByItemIdEqualsAndTransactTimeBetweenOrderByTransactTime(request.id, request.from, request.to);
-            ItemHistoryPrice item = new ItemHistoryPrice();
+            List<CsgoPriceHistory> histories =
+                    priceHistoryDAO.findAllByItemIdEqualsAndTransactTimeBetweenOrderByTransactTime(request.id, request.from, request.to);
+            HistoryPriceItemData item = new HistoryPriceItemData();
             item.id = request.id;
+            item.from = request.from;
+            item.to = request.to;
             for (CsgoPriceHistory history : histories) {
                 item.prices.add((Arrays.asList(history.getTransactTime(), history.getSoldPrice())));
             }
@@ -76,12 +84,28 @@ public class CsgoService {
 
     // ---------- 商品详细信息相关 item ----------
 
+    @Transactional
+    public List<CsgoItem> batchGetItemInfo(List<Integer> requests) {
+        if (requests == null || requests.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return itemDAO.getCsgoItemsByItemIdIn(requests);
+    }
 
     // ---------- 用户持有相关 userProperty ----------
 
 
     // ---------- 用户交易相关 userTransaction ----------
 
+    public void addTransaction(RequestAddUserTransaction request) {
+        CsgoUserTransaction transaction =
+                new CsgoUserTransaction(request.id, request.time, request.price, request.type, request.duration);
+        userTransactionDAO.save(transaction);
+    }
+
+    public List<CsgoUserTransaction> getTransaction(RequestGetUserTransaction request) {
+        return userTransactionDAO.getCsgoUserTransactionsByTransactTimeBetween(request.from, request.to);
+    }
 
     // ---------- 用户累计收益相关 incomeAddup ----------
 
