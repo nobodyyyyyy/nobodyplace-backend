@@ -1,5 +1,7 @@
 package com.nobody.nobodyplace.utils;
 
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -48,5 +50,16 @@ public class TimeUtil {
         cal2.setTime(new Date(millisTime2));
         return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
                 cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
+    }
+
+    public static int toTimeStamp(String dateTime) {
+        long time = 0L;
+        try {
+            time = (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")).parse(dateTime, new ParsePosition(0)).getTime() / 1000;
+        } catch (Exception e) {
+
+        }
+        // 秒级别
+        return (int) time;
     }
 }

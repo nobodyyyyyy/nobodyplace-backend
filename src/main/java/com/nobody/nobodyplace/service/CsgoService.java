@@ -92,15 +92,24 @@ public class CsgoService {
         return itemDAO.getCsgoItemsByItemIdIn(requests);
     }
 
+    @Transactional
+    public List<CsgoItem> getAllItemInfo() {
+        return itemDAO.findAll();
+    }
+
     // ---------- 用户持有相关 userProperty ----------
 
 
     // ---------- 用户交易相关 userTransaction ----------
 
-    public void addTransaction(RequestAddUserTransaction request) {
-        CsgoUserTransaction transaction =
-                new CsgoUserTransaction(request.id, request.time, request.price, request.type, request.duration);
-        userTransactionDAO.save(transaction);
+//    public void addTransaction(RequestAddUserTransaction request) {
+//        CsgoUserTransaction transaction =
+//                new CsgoUserTransaction(request.id, request.time, request.price, request.type, request.duration);
+//        userTransactionDAO.save(transaction);
+//    }
+
+    public void addTransaction(List<CsgoUserTransaction> transactions) {
+        userTransactionDAO.saveAll(transactions);
     }
 
     public List<CsgoUserTransaction> getTransaction(RequestGetUserTransaction request) {
