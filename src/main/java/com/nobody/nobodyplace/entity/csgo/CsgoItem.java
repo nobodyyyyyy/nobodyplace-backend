@@ -18,6 +18,8 @@ public class CsgoItem {
     @Id
     private Integer itemId;
 
+    private Integer yoyoId;
+
     private String itemType;
 
     private String itemName;
@@ -129,5 +131,13 @@ public class CsgoItem {
 
     public void setDesc(String desc) {
         this.desc = desc;
+    }
+
+    public Integer getYoyoId() {
+        return yoyoId;
+    }
+
+    public void setYoyoId(Integer id) {
+        this.yoyoId = id;
     }
 }

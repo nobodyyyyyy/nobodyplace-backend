@@ -20,6 +20,10 @@ public class CommonStorageService {
         return commonStorageDAO.getById("buff_cookie").getValue();
     }
 
+    public String getYoyoCookie() {
+        return commonStorageDAO.getById("yoyo_authorization").getValue();
+    }
+
     public void deleteBuffCookie() {
         this.commonStorageDAO.deleteById("buff_cookie");
     }

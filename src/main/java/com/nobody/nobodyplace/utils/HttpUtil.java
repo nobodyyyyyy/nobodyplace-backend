@@ -41,7 +41,7 @@ public class HttpUtil {
      * @param timeout 超时时间
      * @return 回包，包括状态码和拉回的内容
      */
-    public static HttpResponse get(URL url, boolean needProxy, int timeout, String cookie) {
+    public static HttpResponse get(URL url, boolean needProxy, int timeout, String cookie, String[]... headers) {
         // FIXME 子线程需要吗？
         int responseCode = -1;
         String data;
@@ -55,6 +55,11 @@ public class HttpUtil {
             }
             if (cookie != null && !cookie.isEmpty()) {
                 con.setRequestProperty("Cookie", cookie);
+            }
+            if (headers != null && headers.length != 0) {
+                for (String[] header : headers) {
+                    con.setRequestProperty(header[0], header[1]);
+                }
             }
             con.setInstanceFollowRedirects(false);
             con.setRequestMethod("GET");

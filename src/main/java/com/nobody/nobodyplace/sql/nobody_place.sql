@@ -11,7 +11,7 @@
  Target Server Version : 80024
  File Encoding         : 65001
 
- Date: 04/02/2022 16:43:20
+ Date: 08/02/2022 23:00:54
 */
 
 SET NAMES utf8mb4;
@@ -81,6 +81,7 @@ CREATE TABLE `info_csgo_item` (
                                   `added_time` int unsigned NOT NULL,
                                   `is_stat_trak` bit(1) DEFAULT b'0' COMMENT '1：是',
                                   `desc` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+                                  `yoyo_id` int DEFAULT NULL COMMENT '悠悠唯一id',
                                   PRIMARY KEY (`item_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=ascii COLLATE=ascii_bin;
 
@@ -114,7 +115,7 @@ DROP TABLE IF EXISTS `info_csgo_user_transaction`;
 CREATE TABLE `info_csgo_user_transaction` (
                                               `item_id` int NOT NULL,
                                               `transact_time` int NOT NULL COMMENT '交易时间戳，八天只能交易一次',
-                                              `transact_price` float NOT NULL,
+                                              `transact_price` float NOT NULL COMMENT '卖出则是多少钱，租赁则是一天多少钱',
                                               `transact_type` tinyint NOT NULL COMMENT '0:租赁；1:卖出',
                                               `duration` int DEFAULT NULL COMMENT '如果是租赁，多少天',
                                               PRIMARY KEY (`item_id`,`transact_time`),

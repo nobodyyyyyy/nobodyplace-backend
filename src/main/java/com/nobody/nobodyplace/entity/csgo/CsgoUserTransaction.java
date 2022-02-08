@@ -17,13 +17,16 @@ public class CsgoUserTransaction {
     private Integer itemId;
 
     @Id
-    private Integer transactTime;
+    private String transactId;
 
     private Float transactPrice;
 
+    // 0:租赁；1:卖出
     private Byte transactType;
 
     private Integer duration;
+
+    private Integer transactTime;
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = ITEMID_JOIN_NAME, insertable=false, updatable=false)
@@ -33,8 +36,9 @@ public class CsgoUserTransaction {
 
     }
 
-    public CsgoUserTransaction(int id, int time, float price, byte type, int duration) {
+    public CsgoUserTransaction(int id, String transactId, int time, float price, byte type, int duration) {
         this.itemId = id;
+        this.transactId = transactId;
         this.transactTime = time;
         this.transactPrice = price;
         this.transactType = type;
@@ -49,12 +53,12 @@ public class CsgoUserTransaction {
         this.itemId = itemId;
     }
 
-    public Integer getTransactTime() {
-        return transactTime;
+    public String getTransactId() {
+        return transactId;
     }
 
-    public void setTransactTime(Integer transactTime) {
-        this.transactTime = transactTime;
+    public void setTransactId(String transactId) {
+        this.transactId = transactId;
     }
 
     public Float getTransactPrice() {
@@ -79,6 +83,14 @@ public class CsgoUserTransaction {
 
     public void setDuration(Integer duration) {
         this.duration = duration;
+    }
+
+    public Integer getTransactTime() {
+        return transactTime;
+    }
+
+    public void setTransactTime(Integer transactTime) {
+        this.transactTime = transactTime;
     }
 
     public CsgoItem getItem() {
