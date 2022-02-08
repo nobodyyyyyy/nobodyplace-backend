@@ -59,8 +59,6 @@ public class HttpUtil {
             con.setInstanceFollowRedirects(false);
             con.setRequestMethod("GET");
             con.setConnectTimeout(timeout);
-//            con.setRequestProperty("Content-Type", "application/json");
-
             responseCode = con.getResponseCode();
             BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String line;
