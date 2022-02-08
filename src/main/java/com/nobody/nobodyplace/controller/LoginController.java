@@ -26,7 +26,7 @@ public class LoginController {
     }
 
     @CrossOrigin
-    @PostMapping(value = NobodyPlaceAPI.LOGIN)
+    @PostMapping(value = API.LOGIN)
     @ResponseBody
     public Result login(@RequestBody User requestUser, HttpSession session) {
         String username = requestUser.getUsername();
@@ -37,7 +37,7 @@ public class LoginController {
             return new Result(400);
         } else {
             session.setAttribute("user", user);
-            return new Result(200);
+            return new Result(0);
         }
     }
 }

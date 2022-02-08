@@ -39,7 +39,7 @@ public class SearchSuggestionController {
 
     @CrossOrigin
     @ResponseBody
-    @GetMapping(value = NobodyPlaceAPI.WEB_SEARCH)
+    @GetMapping(value = API.WEB_SEARCH_SUGGESTIONS)
     public Result getSearchSuggestions(String engine, long seq, String input) {
         switch (engine) {
             case SUGGESTION_ENGINE_BING:
@@ -61,7 +61,7 @@ public class SearchSuggestionController {
             String url = BING_SUGGESTIONS_API_PREFIX + input;
 
             URL obj = new URL(BING_SUGGESTIONS_API_PREFIX + URLEncoder.encode(input, StandardCharsets.UTF_8));
-            HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000);
+            HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000, "");
 
             if (response.code != 200) {
                 return new Result(400);
@@ -90,7 +90,7 @@ public class SearchSuggestionController {
             long beginTime = System.currentTimeMillis();
 
             URL obj = new URL(BAIDU_SUGGESTIONS_API_PREFIX + URLEncoder.encode(input, StandardCharsets.UTF_8));
-            HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000);
+            HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000, "");
 
             if (response.code != 200) {
                 // FIXME 代码相同部分合并合并
@@ -125,7 +125,7 @@ public class SearchSuggestionController {
             long beginTime = System.currentTimeMillis();
 
             URL obj = new URL(GOOGLE_SUGGESTIONS_API_PREFIX + URLEncoder.encode(input, StandardCharsets.UTF_8));
-            HttpUtil.HttpResponse response = HttpUtil.get(obj, true,1000);
+            HttpUtil.HttpResponse response = HttpUtil.get(obj, true,1000, "");
             if (response.code != 200) {
                 return new Result(400);
             }
@@ -148,7 +148,7 @@ public class SearchSuggestionController {
     }
 
     private Result generateSuccessResult(long seq, String input, List<String> suggestions) {
-        Result result = new Result(200);
+        Result result = new Result(0);
         result.data = new SearchSuggestions();
         ((SearchSuggestions) result.data).seq = seq;
         ((SearchSuggestions) result.data).input = input;
