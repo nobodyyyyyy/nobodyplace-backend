@@ -24,6 +24,9 @@ public class CsgoIncomeAddup {
 
     private Double leaseEarningAddup;
 
+    // 当天租赁收入
+    private Double leaseEarning;
+
     public Integer getAddupDate() {
         return addupDate;
     }
@@ -35,7 +38,7 @@ public class CsgoIncomeAddup {
     public Double getOverallEarningAddup() {
         return overallEarningAddup;
     }
-//
+
     public void setOverallEarningAddup(Double overallEarningAddup) {
         this.overallEarningAddup = overallEarningAddup;
     }
@@ -62,5 +65,13 @@ public class CsgoIncomeAddup {
 
     public void setLeaseEarningAddup(Double leaseEarningAddup) {
         this.leaseEarningAddup = leaseEarningAddup;
+    }
+
+    public Double getLeaseEarning() {
+        return leaseEarning;
+    }
+
+    public void setLeaseEarning(Double leaseEarning) {
+        this.leaseEarning = leaseEarning;
     }
 }

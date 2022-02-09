@@ -4,7 +4,6 @@ import com.nobody.nobodyplace.dao.csgo.*;
 import com.nobody.nobodyplace.entity.csgo.CsgoItem;
 import com.nobody.nobodyplace.entity.csgo.CsgoPriceHistory;
 import com.nobody.nobodyplace.entity.csgo.CsgoUserTransaction;
-import com.nobody.nobodyplace.requestbody.RequestAddUserTransaction;
 import com.nobody.nobodyplace.requestbody.RequestGetUserTransaction;
 import com.nobody.nobodyplace.requestbody.RequestItemHistoryPrice;
 import com.nobody.nobodyplace.response.csgo.HistoryPriceItemData;
@@ -101,12 +100,6 @@ public class CsgoService {
 
 
     // ---------- 用户交易相关 userTransaction ----------
-
-//    public void addTransaction(RequestAddUserTransaction request) {
-//        CsgoUserTransaction transaction =
-//                new CsgoUserTransaction(request.id, request.time, request.price, request.type, request.duration);
-//        userTransactionDAO.save(transaction);
-//    }
 
     public void addTransaction(List<CsgoUserTransaction> transactions) {
         userTransactionDAO.saveAll(transactions);

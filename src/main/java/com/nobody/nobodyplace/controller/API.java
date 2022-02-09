@@ -22,7 +22,14 @@ public class API {
      * 入参: cookie
      * 出参: {@link com.nobody.nobodyplace.response.Result 没有 data}
      */
-    public static final String UPDATE_BUFF_COOKIE = CSGO + "/update_cookie";
+    public static final String UPDATE_BUFF_COOKIE = CSGO + "/update_buff_cookie";
+
+    /**
+     * post
+     * 入参: cookie
+     * 出参: {@link com.nobody.nobodyplace.response.Result 没有 data}
+     */
+    public static final String UPDATE_YOYO_COOKIE = CSGO + "/update_yoyo_cookie";
 
     /**
      * get
@@ -32,14 +39,6 @@ public class API {
      *
      */
     public static final String GET_USER_PROPERTY = CSGO + "/get_user_property";
-
-    /**
-     * post
-     *（批量）获取物品 id 的详细信息
-     * 入参: [id0, id1, ...]
-     * 出参: [{id: id, type: 类型（如M9等）, name: 皮肤名字, wear_type: String 磨损类型, icon_url: 展示图片地址, is_stat_trak: 0/1 是否携带计数器}, {...}]
-     */
-    public static final String BATCH_GET_ITEM_DETAIL = CSGO + "/batch_get_item_detail";
 
     /**
      * post
@@ -67,17 +66,8 @@ public class API {
 
     /**
      * post
-     * （单个）添加交易记录，此操作会影响到 1）收入状态变化；2）交易流水变化
-     * 目前回包只会提供更新总收入状态的 data，所以查看流水详情的时候要调相应接口更新
-     * 入参: {id: id, time: 交易时间戳（秒），精确到天就可以了, price: 涉及金额, type: 0:租, 1:卖}
-     * 出参: 当天的累计 {from: today, to: today, addUps: [{@link com.nobody.nobodyplace.entity.csgo.CsgoIncomeAddup}]}
-     */
-    public static final String ADD_USER_TRANSACTION = CSGO + "/add_user_transaction";
-
-    /**
-     * post
      * 查看用户交易记录
-     * 入参: {from: 开始时间戳（秒）, to: 结束}
+     * 入参: {from: 开始时间戳（秒）, to: 结束, fetch: 是否强制走悠悠api更新，否则是单纯的读 db (0/1)}
      * 出参: records: [
      *  {
             {@link com.nobody.nobodyplace.entity.csgo.CsgoUserTransaction}
@@ -94,6 +84,4 @@ public class API {
      * 出参: {from: from, to: to, addUps: [{@link com.nobody.nobodyplace.entity.csgo.CsgoIncomeAddup}, ...]}
      */
     public static final String GET_INCOME_STATUS = CSGO + "/get_income_status";
-
-
 }

@@ -5,7 +5,6 @@ import com.nobody.nobodyplace.entity.csgo.CsgoItem;
 import com.nobody.nobodyplace.entity.csgo.CsgoUserTransaction;
 import com.nobody.nobodyplace.gson.csgo.LeaseRecordResponse;
 import com.nobody.nobodyplace.gson.csgo.MarketHistoryItemInfoResponse;
-import com.nobody.nobodyplace.requestbody.RequestAddUserTransaction;
 import com.nobody.nobodyplace.requestbody.RequestGetIncomeAddup;
 import com.nobody.nobodyplace.requestbody.RequestGetUserTransaction;
 import com.nobody.nobodyplace.requestbody.RequestItemHistoryPrice;
@@ -46,10 +45,10 @@ public class CSGOController {
     final CommonStorageService cookieService;
 
     private String buffCookie;
-    private long buffCookieVerifyTime;
-
     private String yoyoCookie;
+    private long buffCookieVerifyTime;
     private long yoyoCookieVerifyTime;
+    private long leaseRecordUpdateTime;
 
     private final Object requestLock = new Object(); // 同时只能存在一个请求
 
@@ -110,14 +109,6 @@ public class CSGOController {
         return false;
     }
 
-    @CrossOrigin
-    @ResponseBody
-    @PostMapping(value = API.BATCH_GET_ITEM_DETAIL)
-    @Deprecated
-    public Result batchGetItemDetail() {
-        return new Result(0);
-    }
-
     /**
      * 批量获取 itemId 对应的商品详情。
      * 调用该接口，说明 itemId 已经存在于 db，不然拿不到 itemId
@@ -146,7 +137,7 @@ public class CSGOController {
     /**
      * 将 DB 里面所有商品基本信息存入两个 cache
      */
-    private void updateItemDetail() {
+    private void fetchAllItemDetails() {
         List<CsgoItem> ret = service.getAllItemInfo();
         for (CsgoItem item : ret) {
             this.itemCache.put(item.getItemId(), item);
@@ -154,12 +145,12 @@ public class CSGOController {
         }
     }
 
-    @CrossOrigin
-    @ResponseBody
-    @GetMapping(value = API.GET_USER_PROPERTY)
-    public Result getUserProperty() {
-        return new Result(0);
-    }
+//    @CrossOrigin
+//    @ResponseBody
+//    @GetMapping(value = API.GET_USER_PROPERTY)
+//    public Result getUserProperty() {
+//        return new Result(0);
+//    }
 
     /**
      * 获取 item 对应的历史记录价格<br/>
@@ -209,7 +200,7 @@ public class CSGOController {
                     }
                 } catch (InterruptedException | MalformedURLException e) {
                     Nlog.info("batchGetItemHistoryPrice... Exception Occurs while requesting itemId = " + itemId + ", err: " + e.toString());
-                    return new Result(404);
+                    return new Result(-1);
                 }
             }
         }
@@ -226,30 +217,6 @@ public class CSGOController {
     }
 
     /**
-     * 添加用户交易记录
-     *
-     * Deprecated: 2/8/2022 <br/>
-     * 获取租赁信息可以调悠悠的接口，不需要手动录入
-     * @param request {@link RequestAddUserTransaction}
-     * @return 基本状态
-     */
-    @CrossOrigin
-    @ResponseBody
-    @PostMapping(value = API.ADD_USER_TRANSACTION)
-    @Deprecated
-    public Result addUserTransaction(@RequestBody RequestAddUserTransaction request) {
-        // 默认请求有效
-//        try {
-//            service.addTransaction(request);
-//            Nlog.info("addUserTransaction... Successfully added user transaction: " + request);
-//            return new Result(0);
-//        } catch (Exception e) {
-//            Nlog.info("addUserTransaction... failed, err = " + e.toString());
-//        }
-        return new Result(404);
-    }
-
-    /**
      * 查询用户交易记录
      * @param request {@link RequestGetUserTransaction}
      * @return 见 API 文档
@@ -259,15 +226,22 @@ public class CSGOController {
     @PostMapping(value = API.GET_USER_TRANSACTION)
     public Result getUserTransaction(@RequestBody RequestGetUserTransaction request) {
         if (request.from > request.to) {
-            return new Result(400, "Invalid request body");
+            return new Result(-1, "Invalid request body");
         }
+        // 一天自动更新一次，除非走强制更新
+        if (System.currentTimeMillis() - leaseRecordUpdateTime > TimeUtil.HOUR || request.fetch == 1) {
+            if (!getLeaseRecords()) {
+                return new Result(-1, "Can not get lease records. Check internet or cookie.");
+            }
+        }
+
         try {
             List<CsgoUserTransaction> transactions = service.getTransaction(request);
             Result result = new Result(0);
             result.data = new UserTransactionData(transactions);
             return result;
         } catch (Exception e) {
-            return new Result(400);
+            return new Result(-1);
         }
     }
 
@@ -277,7 +251,10 @@ public class CSGOController {
      */
     private boolean getLeaseRecords() {
         // 由于在悠悠中只能通过desc唯一确定商品是什么，故要确保数据已经加载到缓存了
-        updateItemDetail();
+        if (itemDescCache.isEmpty()) {
+            // 目前的业务没有说可以动态添加商品信息的，所以读一次缓存就行了，后续如果可以动态添加商品，则需要修改这里
+            fetchAllItemDetails();
+        }
 
         // cookie 检查
         if (System.currentTimeMillis() - yoyoCookieVerifyTime > TimeUtil.HOUR) {
@@ -310,6 +287,7 @@ public class CSGOController {
             service.addTransaction(tmpArr);
         } catch (Exception e) {
             Nlog.info("getLeaseRecords... exception: " + e.toString());
+            return false;
         }
         return true;
     }
