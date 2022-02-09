@@ -5,7 +5,7 @@ import com.nobody.nobodyplace.entity.csgo.CsgoItem;
 import com.nobody.nobodyplace.entity.csgo.CsgoUserTransaction;
 import com.nobody.nobodyplace.gson.csgo.LeaseRecordResponse;
 import com.nobody.nobodyplace.gson.csgo.MarketHistoryItemInfoResponse;
-import com.nobody.nobodyplace.requestbody.RequestGetIncomeAddup;
+import com.nobody.nobodyplace.requestbody.RequestGetIncomeStatus;
 import com.nobody.nobodyplace.requestbody.RequestGetUserTransaction;
 import com.nobody.nobodyplace.requestbody.RequestItemHistoryPrice;
 import com.nobody.nobodyplace.response.Result;
@@ -42,12 +42,12 @@ public class CSGOController {
     private static final String API_GET_LEASE_RECORDS = "https://api.youpin898.com/api/v2/commodity/Lease/GetLeaseRecordList?RoleType=1&pageSize=20&pageIndex=1&gameId=730&status=600";
 
     final CsgoService service;
-    final CommonStorageService cookieService;
+    final CommonStorageService commonService;
 
     private String buffCookie;
     private String yoyoCookie;
     private long buffCookieVerifyTime;
-    private long yoyoCookieVerifyTime;
+
     private long leaseRecordUpdateTime;
 
     private final Object requestLock = new Object(); // 同时只能存在一个请求
@@ -70,9 +70,9 @@ public class CSGOController {
      */
     private final ConcurrentHashMap<Integer, Long> historyPriceUpdateMap;
 
-    public CSGOController(CsgoService service, CommonStorageService cookieService) {
+    public CSGOController(CsgoService service, CommonStorageService commonService) {
         this.service = service;
-        this.cookieService = cookieService;
+        this.commonService = commonService;
         this.itemCache = new ConcurrentHashMap<>();
         this.itemDescCache = new ConcurrentHashMap<>();
         this.historyPriceUpdateMap = new ConcurrentHashMap<>();
@@ -87,7 +87,7 @@ public class CSGOController {
             return true;
         }
         if (TextUtils.isEmpty(buffCookie)) {
-            buffCookie = cookieService.getBuffCookie();
+            buffCookie = commonService.getBuffCookie();
             if (TextUtils.isEmpty(buffCookie)) {
                 return false;
             }
@@ -211,8 +211,7 @@ public class CSGOController {
         // 让我想到在腾讯做的一个需求，明明标签图标只有一个，愣是要扩展做成多个的，说是为了可扩展，无语子
         // 这个接口先写成批量的 01/29/2022
         Result result = new Result(0);
-        result.data = new PriceHistoryData();
-        ((PriceHistoryData) (result.data)).infos = service.batchGetPriceHistories(requestItems);
+        result.data = new PriceHistoryData(service.batchGetPriceHistories(requestItems));
         return result;
     }
 
@@ -229,10 +228,12 @@ public class CSGOController {
             return new Result(-1, "Invalid request body");
         }
         // 一天自动更新一次，除非走强制更新
-        if (System.currentTimeMillis() - leaseRecordUpdateTime > TimeUtil.HOUR || request.fetch == 1) {
+        if (System.currentTimeMillis() - leaseRecordUpdateTime > TimeUtil.DAY || request.fetch == 1) {
             if (!getLeaseRecords()) {
+                Nlog.info("getUserTransaction... Can not get lease records");
                 return new Result(-1, "Can not get lease records. Check internet or cookie.");
             }
+            leaseRecordUpdateTime = System.currentTimeMillis();
         }
 
         try {
@@ -241,6 +242,7 @@ public class CSGOController {
             result.data = new UserTransactionData(transactions);
             return result;
         } catch (Exception e) {
+            Nlog.info("getUserTransaction... ");
             return new Result(-1);
         }
     }
@@ -256,13 +258,11 @@ public class CSGOController {
             fetchAllItemDetails();
         }
 
-        // cookie 检查
-        if (System.currentTimeMillis() - yoyoCookieVerifyTime > TimeUtil.HOUR) {
+        if (TextUtils.isEmpty(yoyoCookie)) {
+            yoyoCookie = commonService.getYoyoCookie();
             if (TextUtils.isEmpty(yoyoCookie)) {
-                yoyoCookie = cookieService.getYoyoCookie();
-                if (TextUtils.isEmpty(yoyoCookie)) {
-                    return false;
-                }
+                Nlog.info("getLeaseRecords... cookie is empty");
+                return false;
             }
         }
 
@@ -272,9 +272,9 @@ public class CSGOController {
             LeaseRecordResponse records = new Gson().fromJson(response.data, LeaseRecordResponse.class);
             if (records.Code != 0) {
                 // 可能是 cookie 过期了，前端弹框
+                Nlog.info("getLeaseRecords... cookie is expired or no connection to internet");
                 return false;
             }
-            yoyoCookieVerifyTime = System.currentTimeMillis();
             List<CsgoUserTransaction> tmpArr = new ArrayList<>();
             for (LeaseRecordResponse.LeaseRecord record : records.Data) {
                 if (itemDescCache.containsKey(record.Name)) {
@@ -295,8 +295,7 @@ public class CSGOController {
     @CrossOrigin
     @ResponseBody
     @PostMapping(value = API.GET_INCOME_STATUS)
-    public Result getIncomeStatus(@RequestBody RequestGetIncomeAddup request) {
-
+    public Result getIncomeStatus(@RequestBody RequestGetIncomeStatus request) {
         return new Result(0);
     }
 

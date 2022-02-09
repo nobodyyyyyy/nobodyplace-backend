@@ -81,7 +81,7 @@ public class API {
      * post
      * 获取累计收入状态
      * 入参: {from: 开始时间戳, to: 结束时间戳, type: 0租赁,1卖出,2潜在,3总共}
-     * 出参: {from: from, to: to, addUps: [{@link com.nobody.nobodyplace.entity.csgo.CsgoIncomeAddup}, ...]}
+     * 出参: {@link com.nobody.nobodyplace.response.csgo.IncomeStatusData.IncomeStatus}
      */
     public static final String GET_INCOME_STATUS = CSGO + "/get_income_status";
 }

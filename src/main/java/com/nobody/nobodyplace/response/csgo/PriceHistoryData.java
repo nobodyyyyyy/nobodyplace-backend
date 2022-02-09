@@ -6,4 +6,8 @@ import java.util.List;
 
 public class PriceHistoryData extends Data {
     public List<HistoryPriceItemData> infos;
+
+    public PriceHistoryData(List<HistoryPriceItemData> infos) {
+        this.infos = infos;
+    }
 }
