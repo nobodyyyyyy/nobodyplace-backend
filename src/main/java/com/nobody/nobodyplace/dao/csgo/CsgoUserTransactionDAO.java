@@ -8,4 +8,6 @@ import java.util.List;
 
 public interface CsgoUserTransactionDAO extends JpaRepository<CsgoUserTransaction, CsgoUserTransactionKey> {
     List<CsgoUserTransaction> getCsgoUserTransactionsByTransactTimeBetween(int begin, int end);
+
+    List<CsgoUserTransaction> getCsgoUserTransactionsByTransactTimeLessThanAndTransactTypeEquals(int end, byte type);
 }

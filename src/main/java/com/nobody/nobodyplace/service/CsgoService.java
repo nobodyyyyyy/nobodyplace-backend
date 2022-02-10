@@ -22,18 +22,17 @@ public class CsgoService {
     private static final Logger Nlog = LoggerFactory.getLogger(CsgoService.class);
 
     final CsgoDetailedTransactionDAO detailedTransactionDAO;
-    final CsgoIncomeAddupDAO incomeAddupDAO;
     final CsgoItemDAO itemDAO;
     final CsgoPriceHistoryDAO priceHistoryDAO;
     final CsgoUserPropertyDAO userPropertyDAO;
     final CsgoUserTransactionDAO userTransactionDAO;
 
     public CsgoService(CsgoDetailedTransactionDAO detailedTransactionDAO,
-                       CsgoIncomeAddupDAO incomeAddupDAO, CsgoItemDAO itemDAO,
-                       CsgoPriceHistoryDAO priceHistoryDAO, CsgoUserPropertyDAO userPropertyDAO,
+                       CsgoItemDAO itemDAO,
+                       CsgoPriceHistoryDAO priceHistoryDAO,
+                       CsgoUserPropertyDAO userPropertyDAO,
                        CsgoUserTransactionDAO userTransactionDAO) {
         this.detailedTransactionDAO = detailedTransactionDAO;
-        this.incomeAddupDAO = incomeAddupDAO;
         this.itemDAO = itemDAO;
         this.priceHistoryDAO = priceHistoryDAO;
         this.userPropertyDAO = userPropertyDAO;
@@ -107,6 +106,10 @@ public class CsgoService {
 
     public List<CsgoUserTransaction> getTransaction(RequestGetUserTransaction request) {
         return userTransactionDAO.getCsgoUserTransactionsByTransactTimeBetween(request.from, request.to);
+    }
+
+    public List<CsgoUserTransaction> getTransaction(int endTime, byte type) {
+        return userTransactionDAO.getCsgoUserTransactionsByTransactTimeLessThanAndTransactTypeEquals(endTime, type);
     }
 
     // ---------- 用户累计收益相关 incomeAddup ----------

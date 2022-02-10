@@ -9,6 +9,7 @@ import com.nobody.nobodyplace.requestbody.RequestGetIncomeStatus;
 import com.nobody.nobodyplace.requestbody.RequestGetUserTransaction;
 import com.nobody.nobodyplace.requestbody.RequestItemHistoryPrice;
 import com.nobody.nobodyplace.response.Result;
+import com.nobody.nobodyplace.response.csgo.IncomeStatusData;
 import com.nobody.nobodyplace.response.csgo.PriceHistoryData;
 import com.nobody.nobodyplace.response.csgo.UserTransactionData;
 import com.nobody.nobodyplace.service.CommonStorageService;
@@ -23,8 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -279,7 +279,7 @@ public class CSGOController {
             for (LeaseRecordResponse.LeaseRecord record : records.Data) {
                 if (itemDescCache.containsKey(record.Name)) {
                     CsgoItem item = itemDescCache.get(record.Name);
-                    tmpArr.add(new CsgoUserTransaction(item.getItemId(), record.OrderNo, TimeUtil.toTimeStamp(record.ReturnTime), record.LeaseUnitPrice, (byte) 0, record.LeaseDays));
+                    tmpArr.add(new CsgoUserTransaction(item.getItemId(), record.OrderNo, TimeUtil.toTimeStampSeconds(record.ReturnTime), record.LeaseUnitPrice, (byte) 0, record.LeaseDays));
                 } else {
                     Nlog.info("getLeaseRecords... cache doesn't contain desc = " + record.Name);
                 }
@@ -296,7 +296,59 @@ public class CSGOController {
     @ResponseBody
     @PostMapping(value = API.GET_INCOME_STATUS)
     public Result getIncomeStatus(@RequestBody RequestGetIncomeStatus request) {
-        return new Result(0);
+//        if (System.currentTimeMillis() - leaseRecordUpdateTime > TimeUtil.DAY || request.fetch == 1) {
+//            if (!getLeaseRecords()) {
+//                return new Result(-1);
+//            }
+//            leaseRecordUpdateTime = System.currentTimeMillis();
+//        }
+
+        List<CsgoUserTransaction> transactions = service.getTransaction(request.to, request.type);
+        transactions.sort(Comparator.comparingInt(CsgoUserTransaction::getTransactTime));
+        List<IncomeStatusData.IncomeStatus> statusList = new ArrayList<>();
+
+        if (transactions.isEmpty()) {
+            Nlog.info("getIncomeStatus... transactions are empty");
+            Result result = new Result(0);
+            result.data = new IncomeStatusData(request.from, request.to, request.type, statusList);
+            return result;
+        }
+
+        long cur = TimeUtil.getDayStartTimeMillis(request.from);
+        long end = TimeUtil.getDayStartTimeMillis(request.to);
+        int transactionPos = 0;
+        double addUp = 0;
+
+        if (cur / 1000 < transactions.get(0).getTransactTime()) {
+            // case 1 : requested start day < first transaction day
+            // build empty status node and skip
+            while (!TimeUtil.isSameDay(transactions.get(0).getTransactTime(), (int) (cur / 1000))) {
+                statusList.add(new IncomeStatusData.IncomeStatus(cur));
+                cur += TimeUtil.DAY;
+            }
+        } else {
+            // case 2 : requested start day > first transaction day
+            // addup all incomes before the requested start time
+            while (!TimeUtil.isSameDay(transactions.get(transactionPos).getTransactTime(), (int) (cur / 1000))) {
+                addUp += transactions.get(transactionPos).getDuration() * transactions.get(transactionPos).getTransactPrice();
+                ++transactionPos;
+            }
+        }
+
+        while (cur <= end) {
+            // check transactions at today
+            double dailyAddup = 0;
+            for (; transactionPos < transactions.size() && TimeUtil.isSameDay(transactions.get(transactionPos).getTransactTime(),  (int) (cur / 1000)); ++transactionPos) {
+                dailyAddup += transactions.get(transactionPos).getDuration() * transactions.get(transactionPos).getTransactPrice();
+            }
+            addUp += dailyAddup;
+            statusList.add(new IncomeStatusData.IncomeStatus(cur, addUp, dailyAddup));
+            cur += TimeUtil.DAY;
+        }
+
+        Result result = new Result(0);
+        result.data = new IncomeStatusData(request.from, request.to, request.type, statusList);
+        return result;
     }
 
     /**
