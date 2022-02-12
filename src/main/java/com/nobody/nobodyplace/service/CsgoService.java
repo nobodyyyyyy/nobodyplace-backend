@@ -112,6 +112,4 @@ public class CsgoService {
         return userTransactionDAO.getCsgoUserTransactionsByTransactTimeLessThanAndTransactTypeEquals(endTime, type);
     }
 
-    // ---------- 用户累计收益相关 incomeAddup ----------
-
 }

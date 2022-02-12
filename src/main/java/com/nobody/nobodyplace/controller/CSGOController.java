@@ -296,12 +296,24 @@ public class CSGOController {
     @ResponseBody
     @PostMapping(value = API.GET_INCOME_STATUS)
     public Result getIncomeStatus(@RequestBody RequestGetIncomeStatus request) {
-//        if (System.currentTimeMillis() - leaseRecordUpdateTime > TimeUtil.DAY || request.fetch == 1) {
-//            if (!getLeaseRecords()) {
-//                return new Result(-1);
-//            }
-//            leaseRecordUpdateTime = System.currentTimeMillis();
-//        }
+        if (request.type == RequestGetIncomeStatus.TYPE_LEASE) {
+            return getLeaseIncomeStatus(request);
+        } else if (request.type == RequestGetIncomeStatus.TYPE_SELL) {
+            Nlog.info("getIncomeStatus... TYPE_SELL unsupported");
+        } else if (request.type == RequestGetIncomeStatus.TYPE_HOLDING) {
+            return getHoldingIncomeStatus(request);
+        }
+        Nlog.info("getIncomeStatus... Unknown income type");
+        return new Result(-1, "unknown income type");
+    }
+
+    private Result getLeaseIncomeStatus(RequestGetIncomeStatus request) {
+        if (System.currentTimeMillis() - leaseRecordUpdateTime > TimeUtil.DAY || request.fetch == 1) {
+            if (!getLeaseRecords()) {
+                return new Result(-1);
+            }
+            leaseRecordUpdateTime = System.currentTimeMillis();
+        }
 
         List<CsgoUserTransaction> transactions = service.getTransaction(request.to, request.type);
         transactions.sort(Comparator.comparingInt(CsgoUserTransaction::getTransactTime));
@@ -349,6 +361,11 @@ public class CSGOController {
         Result result = new Result(0);
         result.data = new IncomeStatusData(request.from, request.to, request.type, statusList);
         return result;
+    }
+
+    private Result getHoldingIncomeStatus(RequestGetIncomeStatus request) {
+
+        return new Result(0);
     }
 
     /**
