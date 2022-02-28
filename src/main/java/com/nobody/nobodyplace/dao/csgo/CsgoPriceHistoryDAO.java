@@ -2,6 +2,7 @@ package com.nobody.nobodyplace.dao.csgo;
 
 import com.nobody.nobodyplace.entity.csgo.CsgoPriceHistory;
 import com.nobody.nobodyplace.entity.csgo.CsgoPriceHistoryKey;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -16,4 +17,6 @@ public interface CsgoPriceHistoryDAO extends JpaRepository<CsgoPriceHistory, Csg
      * @return 结果 list
      */
     List<CsgoPriceHistory> findAllByItemIdEqualsAndTransactTimeBetweenOrderByTransactTime(Integer id, Integer begin, Integer end);
+
+    List<CsgoPriceHistory> findAllByItemIdInAndTransactTimeBetween(List<Integer> ids, Integer begin, Integer end);
 }

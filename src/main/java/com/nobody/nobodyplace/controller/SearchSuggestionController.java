@@ -52,7 +52,7 @@ public class SearchSuggestionController {
                 Nlog.info("engine '" + engine + "' unsupported");
                 break;
         }
-        return new Result(400);
+        return new Result(-1);
     }
 
     private Result getSuggestionsByEngineBing(long seq, String input) {
@@ -64,7 +64,7 @@ public class SearchSuggestionController {
             HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000, "");
 
             if (response.code != 200) {
-                return new Result(400);
+                return new Result(-1);
             }
             List<String> suggestions = new ArrayList<>();
             BingSuggestionResponse suggestionResponse = new Gson().fromJson(response.data, BingSuggestionResponse.class);
@@ -79,7 +79,7 @@ public class SearchSuggestionController {
             return generateSuccessResult(seq, input, suggestions);
         } catch (Exception e) {
             Nlog.info("Handling input = '" + input + "' get Exception: " + e.toString());
-            return new Result(400);
+            return new Result(-1);
         }
     }
 
@@ -94,7 +94,7 @@ public class SearchSuggestionController {
 
             if (response.code != 200) {
                 // FIXME 代码相同部分合并合并
-                return new Result(400);
+                return new Result(-1);
             }
             String data = response.data;
 
@@ -116,7 +116,7 @@ public class SearchSuggestionController {
             return generateSuccessResult(seq, input, suggestions);
         } catch (Exception e) {
             Nlog.info("Handling input = '" + input + "' get Exception: " + e.toString());
-            return new Result(400);
+            return new Result(-1);
         }
     }
 
@@ -127,7 +127,7 @@ public class SearchSuggestionController {
             URL obj = new URL(GOOGLE_SUGGESTIONS_API_PREFIX + URLEncoder.encode(input, StandardCharsets.UTF_8));
             HttpUtil.HttpResponse response = HttpUtil.get(obj, true,1000, "");
             if (response.code != 200) {
-                return new Result(400);
+                return new Result(-1);
             }
 
             // 解析并存储
@@ -143,7 +143,7 @@ public class SearchSuggestionController {
 
         } catch (Exception e) {
             Nlog.info("Handling input = '" + input + "' get Exception: " + e.toString());
-            return new Result(400);
+            return new Result(-1);
         }
     }
 

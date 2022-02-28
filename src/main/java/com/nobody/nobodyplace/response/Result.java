@@ -7,7 +7,7 @@ public class Result {
     public Data data;
 
     public Result() {
-        this.code = 400;
+        this.code = -1;
     }
 
     public Result(int code) {

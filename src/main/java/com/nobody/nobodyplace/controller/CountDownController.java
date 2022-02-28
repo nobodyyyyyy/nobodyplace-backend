@@ -40,7 +40,7 @@ public class CountDownController {
             service.addOrUpdate(countDown);
         } catch (Exception e) {
             Nlog.info("addOrUpdateCountDown... action = " + action + ", err = " + e);
-            return generateResult(404, action, "addOrUpdateCountDown err", null);
+            return generateResult(-1, action, "addOrUpdateCountDown err", null);
         }
         return generateResult(0, action, "success", null);
     }
@@ -54,7 +54,7 @@ public class CountDownController {
             countDowns = service.getAllCountDowns();
         } catch (Exception e) {
             Nlog.info("getAllCountDowns... err = " + e);
-            return generateResult(404, API.GET_COUNTDOWNS, "getAllCountDowns err", null);
+            return generateResult(-1, API.GET_COUNTDOWNS, "getAllCountDowns err", null);
         }
         return generateResult(0, API.GET_COUNTDOWNS, "success", countDowns);
     }
@@ -73,7 +73,7 @@ public class CountDownController {
             }
         } catch (Exception e) {
             Nlog.info("deleteCountDown... err = " + e);
-            return generateResult(404, API.DELETE_COUNTDOWN, "deleteCountDown err", null);
+            return generateResult(-1, API.DELETE_COUNTDOWN, "deleteCountDown err", null);
         }
         return generateResult(0, API.DELETE_COUNTDOWN, "success", null);
     }
