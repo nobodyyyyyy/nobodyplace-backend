@@ -2,6 +2,8 @@ package com.nobody.nobodyplace.controller;
 
 import com.google.gson.Gson;
 import com.nobody.nobodyplace.entity.csgo.CsgoItem;
+import com.nobody.nobodyplace.entity.csgo.CsgoPriceHistory;
+import com.nobody.nobodyplace.entity.csgo.CsgoUserProperty;
 import com.nobody.nobodyplace.entity.csgo.CsgoUserTransaction;
 import com.nobody.nobodyplace.gson.csgo.LeaseRecordResponse;
 import com.nobody.nobodyplace.gson.csgo.MarketHistoryItemInfoResponse;
@@ -11,6 +13,7 @@ import com.nobody.nobodyplace.requestbody.RequestItemHistoryPrice;
 import com.nobody.nobodyplace.response.Result;
 import com.nobody.nobodyplace.response.csgo.IncomeStatusData;
 import com.nobody.nobodyplace.response.csgo.PriceHistoryData;
+import com.nobody.nobodyplace.response.csgo.UserPropertyData;
 import com.nobody.nobodyplace.response.csgo.UserTransactionData;
 import com.nobody.nobodyplace.service.CommonStorageService;
 import com.nobody.nobodyplace.service.CsgoService;
@@ -83,7 +86,7 @@ public class CSGOController {
      * fixme 看了两小时，并没有从 chrome 中取 cookie 的办法，很好奇 postman 是怎么做到的，目前只能手动粘
      */
     private boolean hasValidBuffCookie() {
-        if (System.currentTimeMillis() - buffCookieVerifyTime < TimeUtil.HOUR) {
+        if (System.currentTimeMillis() - buffCookieVerifyTime < TimeUtil.MILLI_HOUR) {
             return true;
         }
         if (TextUtils.isEmpty(buffCookie)) {
@@ -106,6 +109,7 @@ public class CSGOController {
             return true;
         }
         // false if code == 302
+        buffCookie = "";
         return false;
     }
 
@@ -145,12 +149,25 @@ public class CSGOController {
         }
     }
 
-//    @CrossOrigin
-//    @ResponseBody
-//    @GetMapping(value = API.GET_USER_PROPERTY)
-//    public Result getUserProperty() {
-//        return new Result(0);
-//    }
+    @CrossOrigin
+    @ResponseBody
+    @GetMapping(value = API.GET_USER_PROPERTY)
+    public Result getUserProperty() {
+        if (itemCache.isEmpty()) {
+            fetchAllItemDetails();
+        }
+        List<CsgoUserProperty> res = service.getUserProperty();
+        Result result = new Result(0);
+        result.data = new UserPropertyData();
+        for (CsgoUserProperty property : res) {
+            if (itemCache.containsKey(property.getItemId())) {
+                ((UserPropertyData) (result.data)).properties.add(itemCache.get(property.getItemId()));
+            } else {
+                Nlog.info("getUserProperty... itemCache doesn't contain item id = " + property.getItemId());
+            }
+        }
+        return result;
+    }
 
     /**
      * 获取 item 对应的历史记录价格<br/>
@@ -179,28 +196,30 @@ public class CSGOController {
             requestQueue.put(new DelayElement(delayTime, request.id));
             delayTime += 1000;
         }
-        synchronized (requestLock) {
-            while (!requestQueue.isEmpty()){
-                int itemId = 0;
-                try {
-                    itemId = requestQueue.take().itemId;
-                    // todo 根据上次查询时间确定 7 天和或 30 天的粒度
-                    String requestUrl = HttpUtil.setUrlParam(API_GET_ITEM_PAST_7_DAY_TRANSACTION, "goods_id", itemId);
-                    HttpUtil.HttpResponse response = HttpUtil.get(new URL(requestUrl), false, 10000, buffCookie);
-                    MarketHistoryItemInfoResponse historyItemInfoResponse =
-                            new Gson().fromJson(response.data, MarketHistoryItemInfoResponse.class);
-                    List<List<Float>> histories = historyItemInfoResponse.getPriceHistory();
-                    if (histories != null && !histories.isEmpty()) {
-                        service.batchAddPriceHistory(itemId, histories);
-                        // 更新时间
-                        historyPriceUpdateMap.put(itemId, System.currentTimeMillis());
-                        Nlog.info("batchGetItemHistoryPrice... Successfully handled request for itemId = " + itemId);
-                    } else {
-                        Nlog.info("batchGetItemHistoryPrice... History is empty for itemId = " + itemId);
+        if (!requestQueue.isEmpty()) {
+            synchronized (requestLock) {
+                while (!requestQueue.isEmpty()){
+                    int itemId = 0;
+                    try {
+                        itemId = requestQueue.take().itemId;
+                        // todo 根据上次查询时间确定 7 天和或 30 天的粒度
+                        String requestUrl = HttpUtil.setUrlParam(API_GET_ITEM_PAST_7_DAY_TRANSACTION, "goods_id", itemId);
+                        HttpUtil.HttpResponse response = HttpUtil.get(new URL(requestUrl), false, 10000, buffCookie);
+                        MarketHistoryItemInfoResponse historyItemInfoResponse =
+                                new Gson().fromJson(response.data, MarketHistoryItemInfoResponse.class);
+                        List<List<Float>> histories = historyItemInfoResponse.getPriceHistory();
+                        if (histories != null && !histories.isEmpty()) {
+                            service.batchAddPriceHistory(itemId, histories);
+                            // 更新时间
+                            historyPriceUpdateMap.put(itemId, System.currentTimeMillis());
+                            Nlog.info("batchGetItemHistoryPrice... Successfully handled request for itemId = " + itemId);
+                        } else {
+                            Nlog.info("batchGetItemHistoryPrice... History is empty for itemId = " + itemId);
+                        }
+                    } catch (InterruptedException | MalformedURLException e) {
+                        Nlog.info("batchGetItemHistoryPrice... Exception Occurs while requesting itemId = " + itemId + ", err: " + e.toString());
+                        return new Result(-1);
                     }
-                } catch (InterruptedException | MalformedURLException e) {
-                    Nlog.info("batchGetItemHistoryPrice... Exception Occurs while requesting itemId = " + itemId + ", err: " + e.toString());
-                    return new Result(-1);
                 }
             }
         }
@@ -228,7 +247,7 @@ public class CSGOController {
             return new Result(-1, "Invalid request body");
         }
         // 一天自动更新一次，除非走强制更新
-        if (System.currentTimeMillis() - leaseRecordUpdateTime > TimeUtil.DAY || request.fetch == 1) {
+        if (System.currentTimeMillis() - leaseRecordUpdateTime > TimeUtil.MILLI_DAY || request.fetch == 1) {
             if (!getLeaseRecords()) {
                 Nlog.info("getUserTransaction... Can not get lease records");
                 return new Result(-1, "Can not get lease records. Check internet or cookie.");
@@ -258,12 +277,10 @@ public class CSGOController {
             fetchAllItemDetails();
         }
 
+        yoyoCookie = commonService.getYoyoCookie();
         if (TextUtils.isEmpty(yoyoCookie)) {
-            yoyoCookie = commonService.getYoyoCookie();
-            if (TextUtils.isEmpty(yoyoCookie)) {
-                Nlog.info("getLeaseRecords... cookie is empty");
-                return false;
-            }
+            Nlog.info("getLeaseRecords... cookie is empty");
+            return false;
         }
 
         try {
@@ -308,7 +325,7 @@ public class CSGOController {
     }
 
     private Result getLeaseIncomeStatus(RequestGetIncomeStatus request) {
-        if (System.currentTimeMillis() - leaseRecordUpdateTime > TimeUtil.DAY || request.fetch == 1) {
+        if (System.currentTimeMillis() - leaseRecordUpdateTime > TimeUtil.MILLI_DAY || request.fetch == 1) {
             if (!getLeaseRecords()) {
                 return new Result(-1);
             }
@@ -317,7 +334,7 @@ public class CSGOController {
 
         List<CsgoUserTransaction> transactions = service.getTransaction(request.to, request.type);
         transactions.sort(Comparator.comparingInt(CsgoUserTransaction::getTransactTime));
-        List<IncomeStatusData.IncomeStatus> statusList = new ArrayList<>();
+        List<IncomeStatusData.LeaseStatus> statusList = new ArrayList<>();
 
         if (transactions.isEmpty()) {
             Nlog.info("getIncomeStatus... transactions are empty");
@@ -335,13 +352,14 @@ public class CSGOController {
             // case 1 : requested start day < first transaction day
             // build empty status node and skip
             while (!TimeUtil.isSameDay(transactions.get(0).getTransactTime(), (int) (cur / 1000))) {
-                statusList.add(new IncomeStatusData.IncomeStatus(cur));
-                cur += TimeUtil.DAY;
+                statusList.add(new IncomeStatusData.LeaseStatus(cur));
+                cur += TimeUtil.MILLI_DAY;
             }
         } else {
             // case 2 : requested start day > first transaction day
             // addup all incomes before the requested start time
-            while (!TimeUtil.isSameDay(transactions.get(transactionPos).getTransactTime(), (int) (cur / 1000))) {
+            while (transactionPos < transactions.size() &&
+                    transactions.get(transactionPos).getTransactTime() < (int) (cur / 1000)) {
                 addUp += transactions.get(transactionPos).getDuration() * transactions.get(transactionPos).getTransactPrice();
                 ++transactionPos;
             }
@@ -354,18 +372,95 @@ public class CSGOController {
                 dailyAddup += transactions.get(transactionPos).getDuration() * transactions.get(transactionPos).getTransactPrice();
             }
             addUp += dailyAddup;
-            statusList.add(new IncomeStatusData.IncomeStatus(cur, addUp, dailyAddup));
-            cur += TimeUtil.DAY;
+            statusList.add(new IncomeStatusData.LeaseStatus(cur, addUp, dailyAddup));
+            cur += TimeUtil.MILLI_DAY;
         }
 
         Result result = new Result(0);
         result.data = new IncomeStatusData(request.from, request.to, request.type, statusList);
+        Nlog.info("getLeaseIncomeStatus... Successfully handled.");
         return result;
     }
 
+    /**
+     * 获取持有的潜在收入
+     */
     private Result getHoldingIncomeStatus(RequestGetIncomeStatus request) {
+        if (itemCache.isEmpty()) {
+            fetchAllItemDetails();
+        }
+        float cost = 0F;
+        List<CsgoUserProperty> properties = service.getUserProperty();
+        List<Integer> ids = new ArrayList<>();
+        Map<Integer, Float> boughtPriceMap = new HashMap<>();
+        for (CsgoUserProperty property : properties) {
+            ids.add(property.getItemId());
+            boughtPriceMap.put(property.getItemId(), property.getBoughtPrice());
+            cost += property.getBoughtPrice();
+        }
 
-        return new Result(0);
+        // histories sorting priority -- 1) time 2) id 3) transactPrice
+        request.to += TimeUtil.SEC_DAY; // if we want data from x to y, the statement should be BETWEEN x AND y + 1
+        List<CsgoPriceHistory> histories = service.getPriceHistories(request.from, request.to, ids);
+        LinkedList<IncomeStatusData.HoldingStatus> holdings = new LinkedList<>();
+        Result result = new Result(0);
+        int pos = 0; // points at historical node currently handles
+        int end = TimeUtil.getDayStartTimeSeconds(request.to);
+        for (int cur = TimeUtil.getDayStartTimeSeconds(request.from); cur <= end; cur += TimeUtil.SEC_DAY) {
+            // new day
+            if (request.detailedHolding == 1) {
+                holdings.add(new IncomeStatusData.DetailedHoldingStatus(cur, cost));
+            } else {
+                holdings.add(new IncomeStatusData.HoldingStatus(cur, cost));
+            }
+
+            if (pos >= histories.size()) {
+                // no history prices for today
+                continue;
+            }
+            // handle histories of today
+            while (pos < histories.size() && TimeUtil.isSameDay(histories.get(pos).getTransactTime(), cur)) {
+                int right = pos, left = pos;
+                int id = histories.get(left).getItemId();
+                for (; right < histories.size() && histories.get(right).getItemId() == id;) {
+                    ++right;
+                }
+                // handle data in [pos, right)
+                // how to define avg price? 供应会比市场价格低，一些好磨损好贴纸又比市场价格高
+                // skip 3 prices (if exist) and fetch 3 prices (if exist) then avg
+                float itemAvgPrice = 0F;
+                if (left + 3 < right) {
+                    // skip offers, count 3
+                    left += 3;
+                }
+                if (left + 3 < right) {
+                    // avg count 3
+                    for (int i = 0; i < 3; ++i) {
+                        itemAvgPrice += histories.get(left + i).getSoldPrice();
+                    }
+                    itemAvgPrice /= 3;
+                } else {
+                    itemAvgPrice = histories.get(left).getSoldPrice();
+                }
+                holdings.getLast().holdingIncome += itemAvgPrice;
+                if (request.detailedHolding == 1) {
+                    ((IncomeStatusData.DetailedHoldingStatus) holdings.getLast()).detail.add(
+                            new ArrayList<>(Arrays.asList(itemCache.get(id).getDesc(), itemAvgPrice - boughtPriceMap.get(id))));
+                }
+                pos = right;
+            }
+            holdings.getLast().holdingIncome = getActualGains(holdings.getLast().holdingIncome);
+        }
+        result.data = new IncomeStatusData(request.from, request.to, request.type, holdings);
+        Nlog.info("getHoldingIncomeStatus... Successfully handled.");
+        return result;
+    }
+
+    /**
+     * 除去手续费、提现费的实际所得
+     */
+    private float getActualGains(float gain) {
+        return (float) (gain * 0.965);
     }
 
     /**

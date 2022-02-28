@@ -1,5 +1,7 @@
 package com.nobody.nobodyplace.controller;
 
+import com.nobody.nobodyplace.response.csgo.IncomeStatusData;
+
 public class API {
 
     // 本项目时间戳全部传「秒」级别
@@ -81,7 +83,7 @@ public class API {
      * post
      * 获取累计收入状态
      * 入参: {from: 开始时间戳, to: 结束时间戳, type: 0租赁,1卖出,2潜在}
-     * 出参: {@link com.nobody.nobodyplace.response.csgo.IncomeStatusData.IncomeStatus}
+     * 出参: {@link IncomeStatusData.LeaseStatus}
      */
     public static final String GET_INCOME_STATUS = CSGO + "/get_income_status";
 }

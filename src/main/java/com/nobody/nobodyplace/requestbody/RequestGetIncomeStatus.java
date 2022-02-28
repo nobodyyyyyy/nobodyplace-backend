@@ -6,9 +6,6 @@ public class RequestGetIncomeStatus {
     public static final byte TYPE_HOLDING = 2;
 //    public static final byte TYPE_ALL = 3;
 
-    /**
-     * 一定要是整点啊啊啊啊啊啊
-     */
     public int from;
     public int to;
 
@@ -17,4 +14,7 @@ public class RequestGetIncomeStatus {
 
     // 是否走 api 更新租赁信息
     public byte fetch;
+
+    // 查询详细的潜在收入
+    public byte detailedHolding;
 }

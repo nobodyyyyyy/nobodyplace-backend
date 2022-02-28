@@ -3,18 +3,18 @@ package com.nobody.nobodyplace.service;
 import com.nobody.nobodyplace.dao.csgo.*;
 import com.nobody.nobodyplace.entity.csgo.CsgoItem;
 import com.nobody.nobodyplace.entity.csgo.CsgoPriceHistory;
+import com.nobody.nobodyplace.entity.csgo.CsgoUserProperty;
 import com.nobody.nobodyplace.entity.csgo.CsgoUserTransaction;
 import com.nobody.nobodyplace.requestbody.RequestGetUserTransaction;
 import com.nobody.nobodyplace.requestbody.RequestItemHistoryPrice;
 import com.nobody.nobodyplace.response.csgo.HistoryPriceItemData;
+import com.nobody.nobodyplace.utils.TimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class CsgoService {
@@ -79,6 +79,33 @@ public class CsgoService {
         return ret;
     }
 
+    /**
+     * 为计算每天的潜在收入而提供的接口。这里得到的时间会有预处理，转换成每天的起始时间。
+     */
+    public List<CsgoPriceHistory> getPriceHistories(int from, int to, List<Integer> itemIds) {
+        if (itemIds == null || itemIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<CsgoPriceHistory> res = priceHistoryDAO.findAllByItemIdInAndTransactTimeBetween(itemIds, from, to);
+        for (CsgoPriceHistory history : res) {
+            history.setTransactTime(TimeUtil.getDayStartTimeSeconds(history.getTransactTime()));
+        }
+        // already sorted by time and item
+        res.sort(new Comparator<CsgoPriceHistory>() {
+            @Override
+            public int compare(CsgoPriceHistory o1, CsgoPriceHistory o2) {
+                if (!o1.getTransactTime().equals(o2.getTransactTime())) {
+                    return Integer.compare(o1.getTransactTime(), o2.getTransactTime());
+                } else if (!o1.getItemId().equals(o2.getItemId())) {
+                    return Integer.compare(o1.getItemId(), o2.getItemId());
+                } else {
+                    return Float.compare(o1.getSoldPrice(), o2.getSoldPrice());
+                }
+            }
+        });
+        return res;
+    }
+
 
     // ---------- 商品详细信息相关 item ----------
 
@@ -96,6 +123,10 @@ public class CsgoService {
     }
 
     // ---------- 用户持有相关 userProperty ----------
+
+    public List<CsgoUserProperty> getUserProperty() {
+        return userPropertyDAO.findAll();
+    }
 
 
     // ---------- 用户交易相关 userTransaction ----------

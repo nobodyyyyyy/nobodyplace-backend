@@ -8,10 +8,14 @@ import java.util.Date;
 public class TimeUtil {
 
     // 毫秒级别
-    public static int SECOND = 1000;
-    public static int MINUTE = SECOND * 60;
-    public static int HOUR = MINUTE * 60;
-    public static int DAY = HOUR * 24;
+    public static int MILLI_SECOND = 1000;
+    public static int MILLI_MINUTE = MILLI_SECOND * 60;
+    public static int MILLI_HOUR = MILLI_MINUTE * 60;
+    public static int MILLI_DAY = MILLI_HOUR * 24;
+
+    public static int SEC_MINUTE = 60;
+    public static int SEC_HOUR = SEC_MINUTE * 60;
+    public static int SEC_DAY = SEC_HOUR * 24;
 
     /**
      * 获取当天0点时间戳
@@ -40,7 +44,7 @@ public class TimeUtil {
     public static int getDayStartTimeSeconds(int time) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date((long)time * 1000));
-        cal.set(Calendar.HOUR, 0);
+        cal.set(Calendar.HOUR_OF_DAY, 0); // do not use HOUR
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         return (int)(cal.getTimeInMillis() / 1000);
@@ -49,7 +53,7 @@ public class TimeUtil {
     public static long getDayStartTimeMillis(int time) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date((long)time * 1000));
-        cal.set(Calendar.HOUR, 0);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         return cal.getTimeInMillis();
