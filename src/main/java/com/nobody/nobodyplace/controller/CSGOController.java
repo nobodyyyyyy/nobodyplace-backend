@@ -101,7 +101,6 @@ public class CSGOController {
             response = HttpUtil.get(new URL(API_GET_ITEM_ID), false, 2000, buffCookie);
         } catch (MalformedURLException e) {
             // won't happen...
-            buffCookie = "";
             return false;
         }
         if (response.code == 200) {
@@ -109,7 +108,6 @@ public class CSGOController {
             return true;
         }
         // false if code == 302
-        buffCookie = "";
         return false;
     }
 
@@ -180,6 +178,7 @@ public class CSGOController {
     @PostMapping(value = API.BATCH_GET_ITEM_HISTORY_PRICE)
     public Result batchGetItemHistoryPrice(@RequestBody List<RequestItemHistoryPrice> requestItems) {
         if (!hasValidBuffCookie()) {
+            buffCookie = "";
             Nlog.info("batchGetItemHistoryPrice... require BUFF login");
             return new Result(500, "Login required");
         }
@@ -425,31 +424,34 @@ public class CSGOController {
                 for (; right < histories.size() && histories.get(right).getItemId() == id;) {
                     ++right;
                 }
+                float itemAvgPrice = 0F;
                 // handle data in [pos, right)
                 // how to define avg price? 供应会比市场价格低，一些好磨损好贴纸又比市场价格高
-                // skip 3 prices (if exist) and fetch 3 prices (if exist) then avg
-                float itemAvgPrice = 0F;
-                if (left + 3 < right) {
-                    // skip offers, count 3
-                    left += 3;
-                }
-                if (left + 3 < right) {
-                    // avg count 3
-                    for (int i = 0; i < 3; ++i) {
-                        itemAvgPrice += histories.get(left + i).getSoldPrice();
-                    }
-                    itemAvgPrice /= 3;
-                } else {
-                    itemAvgPrice = histories.get(left).getSoldPrice();
-                }
+//                // skip 3 prices (if exist) and fetch 3 prices (if exist) then avg
+
+//                if (left + 3 < right) {
+//                    // skip offers, count 3
+//                    left += 3;
+//                }
+//                if (left + 3 < right) {
+//                    // avg count 3
+//                    for (int i = 0; i < 3; ++i) {
+//                        itemAvgPrice += histories.get(left + i).getSoldPrice();
+//                    }
+//                    itemAvgPrice /= 3;
+//                } else {
+//                    itemAvgPrice = histories.get(left).getSoldPrice();
+//                }
+
+                itemAvgPrice = histories.get(left).getSoldPrice();
                 holdings.getLast().holdingIncome += itemAvgPrice;
                 if (request.detailedHolding == 1) {
                     ((IncomeStatusData.DetailedHoldingStatus) holdings.getLast()).detail.add(
-                            new ArrayList<>(Arrays.asList(itemCache.get(id).getDesc(), itemAvgPrice - boughtPriceMap.get(id))));
+                            new ArrayList<>(Arrays.asList(itemCache.get(id).getDesc(), (Math.round((itemAvgPrice - boughtPriceMap.get(id)) * 1000) / 1000))));
                 }
                 pos = right;
             }
-            holdings.getLast().holdingIncome = getActualGains(holdings.getLast().holdingIncome);
+//            holdings.getLast().holdingIncome = getActualGains(holdings.getLast().holdingIncome);
         }
         result.data = new IncomeStatusData(request.from, request.to, request.type, holdings);
         Nlog.info("getHoldingIncomeStatus... Successfully handled.");
