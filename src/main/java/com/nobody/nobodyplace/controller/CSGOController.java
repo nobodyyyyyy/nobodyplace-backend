@@ -53,7 +53,7 @@ public class CSGOController {
 
     private long leaseRecordUpdateTime;
 
-    private final Object requestLock = new Object(); // 同时只能存在一个请求
+    private static final Object requestLock = new Object(); // 同时只能存在一个请求
 
     /**
      * itemId 和实体类的映射缓存
