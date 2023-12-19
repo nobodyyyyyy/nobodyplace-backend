@@ -51,7 +51,7 @@ public class CSGOController {
     private String yoyoCookie;
     private long yoyoCookieVerifyTime;
 
-    private final Object requestLock = new Object(); // 同时只能存在一个请求
+    private static final Object requestLock = new Object(); // 同时只能存在一个请求
 
     /**
      * itemId 和实体类的映射缓存
