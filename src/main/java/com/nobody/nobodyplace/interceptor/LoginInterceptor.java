@@ -12,7 +12,7 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     // 需要重定向的页面
     public static final String[] AUTH_REQUIRED_PAGES = new String[] {
-//        "index"
+        "index"
     };
 
     @Override

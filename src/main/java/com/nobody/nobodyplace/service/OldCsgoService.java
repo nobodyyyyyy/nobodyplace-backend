@@ -17,9 +17,9 @@ import javax.transaction.Transactional;
 import java.util.*;
 
 @Service
-public class CsgoService {
+public class OldCsgoService {
 
-    private static final Logger Nlog = LoggerFactory.getLogger(CsgoService.class);
+    private static final Logger Nlog = LoggerFactory.getLogger(OldCsgoService.class);
 
     final CsgoDetailedTransactionDAO detailedTransactionDAO;
     final CsgoItemDAO itemDAO;
@@ -27,11 +27,11 @@ public class CsgoService {
     final CsgoUserPropertyDAO userPropertyDAO;
     final CsgoUserTransactionDAO userTransactionDAO;
 
-    public CsgoService(CsgoDetailedTransactionDAO detailedTransactionDAO,
-                       CsgoItemDAO itemDAO,
-                       CsgoPriceHistoryDAO priceHistoryDAO,
-                       CsgoUserPropertyDAO userPropertyDAO,
-                       CsgoUserTransactionDAO userTransactionDAO) {
+    public OldCsgoService(CsgoDetailedTransactionDAO detailedTransactionDAO,
+                          CsgoItemDAO itemDAO,
+                          CsgoPriceHistoryDAO priceHistoryDAO,
+                          CsgoUserPropertyDAO userPropertyDAO,
+                          CsgoUserTransactionDAO userTransactionDAO) {
         this.detailedTransactionDAO = detailedTransactionDAO;
         this.itemDAO = itemDAO;
         this.priceHistoryDAO = priceHistoryDAO;

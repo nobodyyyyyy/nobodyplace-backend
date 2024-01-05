@@ -1,21 +1,38 @@
 package com.nobody.nobodyplace.response;
 
-public class Result {
+import lombok.Data;
 
-    public int code;
-    public String msg;
-    public Data data;
+import java.io.Serializable;
 
-    public Result() {
-        this.code = -1;
+/**
+ * 后端统一返回结果
+ * @param <T>
+ */
+@Data
+public class Result<T> implements Serializable {
+
+    private Integer code;
+    private String msg;
+    private T data;
+
+    public static <T> Result<T> success() {
+        Result<T> result = new Result<T>();
+        result.code = 0;
+        return result;
     }
 
-    public Result(int code) {
-        this.code = code;
+    public static <T> Result<T> success(T object) {
+        Result<T> result = new Result<T>();
+        result.data = object;
+        result.code = 0;
+        return result;
     }
 
-    public Result(int code, String msg) {
-        this.code = code;
-        this.msg = msg;
+    public static <T> Result<T> error(String msg) {
+        Result result = new Result();
+        result.msg = msg;
+        result.code = -1;
+        return result;
     }
+
 }

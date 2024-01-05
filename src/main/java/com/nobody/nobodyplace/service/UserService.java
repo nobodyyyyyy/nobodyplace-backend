@@ -1,31 +1,38 @@
 package com.nobody.nobodyplace.service;
 
 import com.nobody.nobodyplace.dao.UserDAO;
-import com.nobody.nobodyplace.entity.User;
+import com.nobody.nobodyplace.pojo.entity.User;
+import com.nobody.nobodyplace.pojo.dto.UserLoginDTO;
 import org.springframework.stereotype.Service;
 
-@Service
-public class UserService {
-    final UserDAO userDAO;
+public interface UserService {
 
-    public UserService(UserDAO userDAO) {
-        this.userDAO = userDAO;
-    }
+    /**
+     * 用户登录
+     */
+    User login(UserLoginDTO userLoginDTO);
 
-    public boolean isExist(String username) {
-        User user = getByName(username);
-        return null != user;
-    }
+//    final UserDAO userDAO;
+//
+//    public UserService(UserDAO userDAO) {
+//        this.userDAO = userDAO;
+//    }
+//
+//    public boolean isExist(String username) {
+//        User user = getByName(username);
+//        return null != user;
+//    }
+//
+//    public User getByName(String username) {
+//        return userDAO.findByUsername(username);
+//    }
+//
+//    public User get(String username, String password){
+//        return userDAO.getByUsernameAndPassword(username, password);
+//    }
+//
+//    public void add(User user) {
+//        userDAO.save(user);
+//    }
 
-    public User getByName(String username) {
-        return userDAO.findByUsername(username);
-    }
-
-    public User get(String username, String password){
-        return userDAO.getByUsernameAndPassword(username, password);
-    }
-
-    public void add(User user) {
-        userDAO.save(user);
-    }
 }

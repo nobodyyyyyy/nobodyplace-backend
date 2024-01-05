@@ -1,5 +1,6 @@
 package com.nobody.nobodyplace.controller;
 
+import com.nobody.nobodyplace.response.ResultPast;
 import com.nobody.nobodyplace.response.csgo.IncomeStatusData;
 
 public class API {
@@ -8,7 +9,7 @@ public class API {
 
     public static final String LOGIN = "/api/login";
     public static final String WEB_SEARCH_SUGGESTIONS = "/api/get_search_suggestions";
-    
+
     // count down related
     private static final String COUNTDOWN = "/api/countdown";
     public static final String GET_COUNTDOWNS = COUNTDOWN + "/get_all";
@@ -22,14 +23,14 @@ public class API {
     /**
      * post
      * 入参: cookie
-     * 出参: {@link com.nobody.nobodyplace.response.Result 没有 data}
+     * 出参: {@link ResultPast 没有 data}
      */
     public static final String UPDATE_BUFF_COOKIE = CSGO + "/update_buff_cookie";
 
     /**
      * post
      * 入参: cookie
-     * 出参: {@link com.nobody.nobodyplace.response.Result 没有 data}
+     * 出参: {@link ResultPast 没有 data}
      */
     public static final String UPDATE_YOYO_COOKIE = CSGO + "/update_yoyo_cookie";
 
@@ -86,4 +87,8 @@ public class API {
      * 出参: {@link IncomeStatusData.LeaseStatus}
      */
     public static final String GET_INCOME_STATUS = CSGO + "/get_income_status";
+
+    // 上述都不知道啥时候写的了，
+    // 新加的在下面 2024/1/4
+    public static final String GET_ITEM_INFOS = CSGO + "/item_infos";
 }

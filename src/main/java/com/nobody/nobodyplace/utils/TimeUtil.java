@@ -51,21 +51,22 @@ public class TimeUtil {
     }
 
     public static int getDayStartTimeSeconds(int time) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(new Date((long)time * 1000));
-        cal.set(Calendar.HOUR_OF_DAY, 0); // do not use HOUR
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        return (int)(cal.getTimeInMillis() / 1000);
+        LocalDateTime now = LocalDateTime.ofEpochSecond((long)time * 1000, 0, CN_ZONE);
+        int h = now.getHour();
+        int m = now.getMinute();
+        int s = now.getSecond();
+        time /= 1000;
+        time -= (SEC_HOUR * h + SEC_MINUTE * m + s);
+        return time;
     }
 
     public static long getDayStartTimeMillis(int time) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(new Date((long)time * 1000));
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        return cal.getTimeInMillis();
+        LocalDateTime now = LocalDateTime.ofEpochSecond((long)time * 1000, 0, CN_ZONE);
+        int h = now.getHour();
+        int m = now.getMinute();
+        int s = now.getSecond();
+        time -= (MILLI_HOUR * h + MILLI_MINUTE * m + MILLI_SECOND * s);
+        return time;
     }
 
     /**
@@ -106,12 +107,6 @@ public class TimeUtil {
 //        return (int) time;
         LocalDateTime t = LocalDateTime.parse(dateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         return (int) t.atZone(CN_ZONE).toEpochSecond();
-    }
-
-
-    public static void main(String[] args) {
-        System.out.println(TimeUtil.todayStartTimeMillis());
-        System.out.println(toTimeStamp("2012-10-22 23:02:10"));
     }
 
     public static void main(String[] args) {

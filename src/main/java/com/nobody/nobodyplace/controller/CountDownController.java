@@ -2,7 +2,7 @@ package com.nobody.nobodyplace.controller;
 
 import com.nobody.nobodyplace.entity.CountDown;
 import com.nobody.nobodyplace.response.CountDownData;
-import com.nobody.nobodyplace.response.Result;
+import com.nobody.nobodyplace.response.ResultPast;
 import com.nobody.nobodyplace.service.CountDownService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,18 +24,18 @@ public class CountDownController {
     @CrossOrigin
     @PostMapping(value = API.ADD_COUNTDOWN)
     @ResponseBody
-    public Result addCountDown(@RequestBody CountDown countDown) {
+    public ResultPast addCountDown(@RequestBody CountDown countDown) {
         return addOrUpdateCountDown(API.ADD_COUNTDOWN, countDown);
     }
 
     @CrossOrigin
     @PostMapping(value = API.UPDATE_COUNTDOWN)
     @ResponseBody
-    public Result updateCountDown(@RequestBody CountDown countDown) {
+    public ResultPast updateCountDown(@RequestBody CountDown countDown) {
         return addOrUpdateCountDown(API.UPDATE_COUNTDOWN, countDown);
     }
 
-    private Result addOrUpdateCountDown(String action, CountDown countDown) {
+    private ResultPast addOrUpdateCountDown(String action, CountDown countDown) {
         try {
             service.addOrUpdate(countDown);
         } catch (Exception e) {
@@ -48,7 +48,7 @@ public class CountDownController {
     @CrossOrigin
     @ResponseBody
     @GetMapping(value = API.GET_COUNTDOWNS)
-    public Result getAllCountDowns() {
+    public ResultPast getAllCountDowns() {
         List<CountDown> countDowns;
         try {
             countDowns = service.getAllCountDowns();
@@ -62,7 +62,7 @@ public class CountDownController {
     @CrossOrigin
     @ResponseBody
     @PostMapping(value = API.DELETE_COUNTDOWN)
-    public Result deleteCountDown(@RequestBody String id) {
+    public ResultPast deleteCountDown(@RequestBody String id) {
         try {
             // we get id like 1293812038019= ends with '=' who knows why ?
             if (id.endsWith("=")) {
@@ -78,8 +78,8 @@ public class CountDownController {
         return generateResult(0, API.DELETE_COUNTDOWN, "success", null);
     }
 
-    private Result generateResult(int code, String action, String msg, List<CountDown> countDowns) {
-        Result result = new Result(code, msg);
+    private ResultPast generateResult(int code, String action, String msg, List<CountDown> countDowns) {
+        ResultPast result = new ResultPast(code, msg);
         result.data = new CountDownData();
         ((CountDownData) (result.data)).action = action;
         ((CountDownData) (result.data)).countDowns = countDowns;

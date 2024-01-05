@@ -2,7 +2,7 @@ package com.nobody.nobodyplace.controller;
 
 import com.google.gson.Gson;
 import com.nobody.nobodyplace.gson.BingSuggestionResponse;
-import com.nobody.nobodyplace.response.Result;
+import com.nobody.nobodyplace.response.ResultPast;
 import com.nobody.nobodyplace.response.SearchSuggestions;
 import com.nobody.nobodyplace.utils.HttpUtil;
 import org.dom4j.DocumentHelper;
@@ -40,7 +40,7 @@ public class SearchSuggestionController {
     @CrossOrigin
     @ResponseBody
     @GetMapping(value = API.WEB_SEARCH_SUGGESTIONS)
-    public Result getSearchSuggestions(String engine, long seq, String input) {
+    public ResultPast getSearchSuggestions(String engine, long seq, String input) {
         switch (engine) {
             case SUGGESTION_ENGINE_BING:
                 return getSuggestionsByEngineBing(seq, input);
@@ -52,10 +52,10 @@ public class SearchSuggestionController {
                 Nlog.info("engine '" + engine + "' unsupported");
                 break;
         }
-        return new Result(-1);
+        return new ResultPast(-1);
     }
 
-    private Result getSuggestionsByEngineBing(long seq, String input) {
+    private ResultPast getSuggestionsByEngineBing(long seq, String input) {
         try {
             long beginTime = System.currentTimeMillis();
             String url = BING_SUGGESTIONS_API_PREFIX + input;
@@ -64,7 +64,7 @@ public class SearchSuggestionController {
             HttpUtil.HttpResponse response = HttpUtil.get(obj, false, 1000, "");
 
             if (response.code != 200) {
-                return new Result(-1);
+                return new ResultPast(-1);
             }
             List<String> suggestions = new ArrayList<>();
             BingSuggestionResponse suggestionResponse = new Gson().fromJson(response.data, BingSuggestionResponse.class);
@@ -79,13 +79,13 @@ public class SearchSuggestionController {
             return generateSuccessResult(seq, input, suggestions);
         } catch (Exception e) {
             Nlog.info("Handling input = '" + input + "' get Exception: " + e.toString());
-            return new Result(-1);
+            return new ResultPast(-1);
         }
     }
 
     @Deprecated
     // FIXME 乱码
-    private Result getSuggestionsByEngineBaidu(long seq, String input) {
+    private ResultPast getSuggestionsByEngineBaidu(long seq, String input) {
         try {
             long beginTime = System.currentTimeMillis();
 
@@ -94,7 +94,7 @@ public class SearchSuggestionController {
 
             if (response.code != 200) {
                 // FIXME 代码相同部分合并合并
-                return new Result(-1);
+                return new ResultPast(-1);
             }
             String data = response.data;
 
@@ -116,18 +116,18 @@ public class SearchSuggestionController {
             return generateSuccessResult(seq, input, suggestions);
         } catch (Exception e) {
             Nlog.info("Handling input = '" + input + "' get Exception: " + e.toString());
-            return new Result(-1);
+            return new ResultPast(-1);
         }
     }
 
-    private Result getSuggestionsByEngineGoogle(long seq, String input) {
+    private ResultPast getSuggestionsByEngineGoogle(long seq, String input) {
         try {
             long beginTime = System.currentTimeMillis();
 
             URL obj = new URL(GOOGLE_SUGGESTIONS_API_PREFIX + URLEncoder.encode(input, StandardCharsets.UTF_8));
             HttpUtil.HttpResponse response = HttpUtil.get(obj, true,1000, "");
             if (response.code != 200) {
-                return new Result(-1);
+                return new ResultPast(-1);
             }
 
             // 解析并存储
@@ -143,12 +143,12 @@ public class SearchSuggestionController {
 
         } catch (Exception e) {
             Nlog.info("Handling input = '" + input + "' get Exception: " + e.toString());
-            return new Result(-1);
+            return new ResultPast(-1);
         }
     }
 
-    private Result generateSuccessResult(long seq, String input, List<String> suggestions) {
-        Result result = new Result(0);
+    private ResultPast generateSuccessResult(long seq, String input, List<String> suggestions) {
+        ResultPast result = new ResultPast(0);
         result.data = new SearchSuggestions();
         ((SearchSuggestions) result.data).seq = seq;
         ((SearchSuggestions) result.data).input = input;

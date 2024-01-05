@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.nobody.nobodyplace.mapper.CSGOItemMapper">
+
+    <select id="getByFilterInfo" resultType="com.nobody.nobodyplace.pojo.entity.CSGOItem">
+        select * from csgo_item
+            <where>
+                <if test="name != null and name != ''">
+                    name_cn like concat('%',#{name},'%')
+                </if>
+                <if test="mainType != null and mainType != ''">
+                    and main_type = #{mainType}
+                </if>
+                <if test="subType != null and subType != ''">
+                    and sub_type = #{subType}
+                </if>
+                <if test="exterior != null and exterior != ''">
+                    and exterior = #{exterior}
+                </if>
+
+            </where>
+
+    </select>
+
+</mapper>
