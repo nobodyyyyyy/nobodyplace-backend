@@ -58,10 +58,10 @@ public class CSGOCrawler extends Crawler{
                         Thread.sleep(5000);
                     }
                     getGoodsInfo(type, i, SORT_PRICE_DESC);
-                    System.out.println("[INFO] Done. current page (total " + PAGES + "): " + i + ". current type: " + type);
+                    System.out.println("[INFO] Done. current pageQueryItems (total " + PAGES + "): " + i + ". current type: " + type);
                     Thread.sleep(5000);
                 } catch (Exception e) {
-                    System.out.println("[END] current page: " + i + ". current type: " + type);
+                    System.out.println("[END] current pageQueryItems: " + i + ". current type: " + type);
                     System.out.println(e.toString());
                 }
             }

@@ -19,6 +19,8 @@ public class TimeUtil {
     public static int SEC_HOUR = SEC_MINUTE * 60;
     public static int SEC_DAY = SEC_HOUR * 24;
 
+    public static String NORMAL_FORMAT_PATTERN = "yyyy-MM-dd HH:mm:ss";
+
     private static final ZoneOffset CN_ZONE = ZoneOffset.of("+8");
 
     /**
@@ -105,8 +107,17 @@ public class TimeUtil {
 //        }
 //        // 秒级别
 //        return (int) time;
-        LocalDateTime t = LocalDateTime.parse(dateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        LocalDateTime t = LocalDateTime.parse(dateTime, DateTimeFormatter.ofPattern(NORMAL_FORMAT_PATTERN));
         return (int) t.atZone(CN_ZONE).toEpochSecond();
+    }
+
+    public static LocalDateTime strToLocalDateTime(String strTime, String pattern) {
+        DateTimeFormatter df = DateTimeFormatter.ofPattern(pattern);
+        return LocalDateTime.parse(strTime, df);
+    }
+
+    public static LocalDateTime getCurrentLocalDateTime() {
+        return LocalDateTime.now();
     }
 
     public static void main(String[] args) {

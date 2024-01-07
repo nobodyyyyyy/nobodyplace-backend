@@ -89,6 +89,13 @@ public class API {
     public static final String GET_INCOME_STATUS = CSGO + "/get_income_status";
 
     // 上述都不知道啥时候写的了，
+
     // 新加的在下面 2024/1/4
     public static final String GET_ITEM_INFOS = CSGO + "/item_infos";
+
+    public static final String ADD_USER_ITEM = CSGO + "/add_user_item";
+
+    public static final String GET_USER_ITEMS = CSGO + "/get_user_items";
+
+    public static final String DELETE_USER_ITEM = CSGO + "/del_user_item";
 }
