@@ -12,4 +12,5 @@ public class JwtProperties {
     private String adminSecretKey;
     private long adminTtl;
     private String adminTokenName;
+    private String buffCookie;  // 其实不应该放这里的
 }

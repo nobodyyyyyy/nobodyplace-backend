@@ -97,5 +97,12 @@ public class API {
 
     public static final String GET_USER_ITEMS = CSGO + "/get_user_items";
 
+    public static final String GET_USER_ITEMS_WITH_UPDATE_PRICE = CSGO + "/get_user_items_with_update_price";
+
     public static final String DELETE_USER_ITEM = CSGO + "/del_user_item";
+
+    // 真实交易相关
+    public static final String GET_ITEM_PRICE = CSGO + "/get_item_price";
+
+    public static final String GET_INVENTORY_STATUS = CSGO + "/inventory_status";
 }

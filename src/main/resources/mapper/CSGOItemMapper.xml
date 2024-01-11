@@ -36,8 +36,43 @@
         order by updateTime desc
     </select>
 
+    <select id="getUserAllInventory" resultType="com.nobody.nobodyplace.pojo.vo.CSGOInventoryVO">
+        select inv.id id, items.item_id itemId, items.name_cn nameCN, items.name_eng nameEng, items.pic_url picUrl, items.exterior exterior,
+               inv.bought_time boughtTime, inv.update_time updateTime, inv.bought_price boughtPrice, items.main_type mainType, items.sub_type subType
+        from user_csgo_inventory inv, csgo_item items
+        where items.item_id = inv.item_id and inv.user_id = #{userId}
+        order by updateTime desc
+    </select>
+
     <delete id="deleteInventoryItem">
         delete from user_csgo_inventory where id = #{itemId} and user_id = #{userId}
     </delete>
+
+    <insert id="insertItemHistoryPrices">
+        insert ignore into csgo_history_price (item_id, price, time)
+        values
+        <foreach collection="historyPrices" item="historyPrice" separator =",">
+            (#{historyPrice.itemId},
+             #{historyPrice.price},
+             #{historyPrice.time})
+        </foreach>
+    </insert>
+
+    <select id="getItemHistoryPrices" resultType="com.nobody.nobodyplace.pojo.dto.CSGOItemHistoryPriceDTO">
+        select item_id itemId, price price, time `time` from csgo_history_price
+        where item_id = #{itemId}
+        and `time` between STR_TO_DATE(#{from}, '%Y-%m-%d %H:%i:%s') and STR_TO_DATE(#{to}, '%Y-%m-%d %H:%i:%s') order by `time` desc
+    </select>
+
+    <select id="getItemLatestPrice" resultType="com.nobody.nobodyplace.pojo.dto.CSGOItemHistoryPriceDTO">
+        select item_id itemId, price price, time `time` from csgo_history_price
+        where item_id = #{itemId}
+        order by `time` desc
+        limit 1
+    </select>
+
+    <select id="getItemHistoryPricesRecent" resultType="com.nobody.nobodyplace.pojo.dto.CSGOItemHistoryPriceDTO">
+        select p.item_id itemId, p.price price, p.time `time` from csgo_history_price p where item_id = #{itemId} order by time desc limit 100
+    </select>
 
 </mapper>

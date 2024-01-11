@@ -1,10 +1,7 @@
 package com.nobody.nobodyplace.utils;
 
 import java.sql.Time;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 
 public class TimeUtil {
@@ -116,8 +113,18 @@ public class TimeUtil {
         return LocalDateTime.parse(strTime, df);
     }
 
+    public static String localDateTimeToStr(LocalDateTime ldt, String pattern) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern(pattern);
+        return ldt.format(fmt);
+    }
+
     public static LocalDateTime getCurrentLocalDateTime() {
         return LocalDateTime.now();
+    }
+
+    public static LocalDateTime timestampToDatetime(long timestamp) {
+        Instant instant = Instant.ofEpochMilli(timestamp);
+        return LocalDateTime.ofInstant(instant, CN_ZONE);
     }
 
     public static void main(String[] args) {

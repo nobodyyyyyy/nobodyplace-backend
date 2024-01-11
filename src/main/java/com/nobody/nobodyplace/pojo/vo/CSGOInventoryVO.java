@@ -29,4 +29,6 @@ public class CSGOInventoryVO implements Serializable {
     String mainType;
     String subType;
 
+    Float currentPrice;
+
 }

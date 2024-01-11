@@ -206,7 +206,7 @@ public class OldCSGOController {
                         HttpUtil.HttpResponse response = HttpUtil.get(new URL(requestUrl), false, 10000, buffCookie);
                         MarketHistoryItemInfoResponse historyItemInfoResponse =
                                 new Gson().fromJson(response.data, MarketHistoryItemInfoResponse.class);
-                        List<List<Float>> histories = historyItemInfoResponse.getPriceHistory();
+                        List<List<Float>> histories = historyItemInfoResponse.getPriceHistoryRawList();
                         if (histories != null && !histories.isEmpty()) {
                             service.batchAddPriceHistory(itemId, histories);
                             // 更新时间
