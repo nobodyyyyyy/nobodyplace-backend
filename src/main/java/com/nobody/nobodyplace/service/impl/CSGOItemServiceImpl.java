@@ -15,6 +15,7 @@ import com.nobody.nobodyplace.response.PageResult;
 import com.nobody.nobodyplace.service.CSGOItemService;
 import com.nobody.nobodyplace.utils.HttpUtil;
 import com.nobody.nobodyplace.utils.TimeUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
@@ -23,11 +24,11 @@ import org.springframework.stereotype.Service;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
 @Service
+@Slf4j
 public class CSGOItemServiceImpl implements CSGOItemService {
 
     final CSGOItemMapper csgoItemMapper;
@@ -36,7 +37,6 @@ public class CSGOItemServiceImpl implements CSGOItemService {
 
     private static final String API_GET_ITEM_PAST_7_DAY_TRANSACTION = "https://buff.163.com/api/market/goods/price_history/buff?game=csgo&currency=CNY&days=7";
     private static final String API_GET_ITEM_PAST_MONTH_TRANSACTION = "https://buff.163.com/api/market/goods/price_history/buff?game=csgo&currency=CNY&days=30";
-
 
     public CSGOItemServiceImpl(CSGOItemMapper csgoItemMapper, JwtProperties jwtProperties) {
         this.csgoItemMapper = csgoItemMapper;
@@ -85,8 +85,9 @@ public class CSGOItemServiceImpl implements CSGOItemService {
      * 获取一个商品的真实交易历史记录。走网络请求
      */
     @Override
-    @Async
+    @Async("taskExecutor")
     public Future<List<CSGOItemHistoryPriceDTO>> requestItemPrices(CSGOItemHistoryPriceQueryDTO csgoItemHistoryPriceQueryDTO) throws MalformedURLException, InterruptedException {
+        log.info("requestItemPrices... Web current price request for {}", csgoItemHistoryPriceQueryDTO);
         long itemId = csgoItemHistoryPriceQueryDTO.getItemId();
         String requestUrl = HttpUtil.setUrlParam(API_GET_ITEM_PAST_MONTH_TRANSACTION, "goods_id", itemId);
         String cookie = jwtProperties.getBuffCookie();
@@ -104,9 +105,14 @@ public class CSGOItemServiceImpl implements CSGOItemService {
     @Override
     public void insertItemPrices(List<CSGOItemHistoryPriceDTO> csgoItemHistoryPriceDTOS) {
         try {
+            if (csgoItemHistoryPriceDTOS != null && csgoItemHistoryPriceDTOS.size() > 0 && csgoItemHistoryPriceDTOS.get(0) != null) {
+                log.info("insertItemPrices... Inserting item {}", csgoItemHistoryPriceDTOS.get(0).getItemId());
+            } else {
+                log.info("insertItemPrices... Empty response");
+            }
             csgoItemMapper.insertItemHistoryPrices(csgoItemHistoryPriceDTOS);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            log.info("insertItemPrices... Err {}", e.getMessage());
         }
     }
 

@@ -20,9 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.MalformedURLException;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -140,32 +138,15 @@ public class CSGOController {
         PageResult pageResult = innerGetUserItems(csgoInventoryPageQueryDTO);
         List<CSGOInventoryVO> records = (List<CSGOInventoryVO>) pageResult.getRecords();
         // 2) 看哪个物品最新的价格没拿到
-        LocalDateTime now = LocalDateTime.now();
-        int year = now.getYear();
-        int dOfYear = now.getDayOfYear();
-        String webRequestKey = "pricefetch:item%s:year" + year;
-        List<CSGOItemHistoryPriceQueryDTO> requestList = new ArrayList<>();
-        for (CSGOInventoryVO record : records) {
-            Long itemId = record.getItemId();
-            String key = String.format(webRequestKey, itemId);
-
-            if (redisBit.get(key) == null || !redisBit.getBit(key, dOfYear)) {
-                // 没有更新的话，放到请求队列
-                requestList.add(CSGOItemHistoryPriceQueryDTO.builder()
-                        .itemId(itemId)
-                        .from(TimeUtil.localDateTimeToStr(now.minusDays(30), TimeUtil.NORMAL_FORMAT_PATTERN))
-                        .to(TimeUtil.localDateTimeToStr(now, TimeUtil.NORMAL_FORMAT_PATTERN))
-                        .build());
-            }
-        }
+        List<CSGOItemHistoryPriceQueryDTO> requestList = userInventoryToRequestList(records);
         // 3）批量请求这些物品
-        for (CSGOItemHistoryPriceQueryDTO request : requestList) {
-            String key = String.format(webRequestKey, request.getItemId());
-            requestAndSaveItemPrice(request, key, dOfYear);
+        if (!requestList.isEmpty()) {
+            batchRequestAndSaveItemPrice(requestList);
         }
         // 4）更新
         for (CSGOInventoryVO item : records) {
-            Float latestPrice = getItemLatestPrice(item.getItemId());
+            Long itemId = item.getItemId();
+            Float latestPrice = getItemLatestPrice(itemId);
             item.setCurrentPrice(latestPrice);
         }
         pageResult.setRecords(records);
@@ -191,11 +172,51 @@ public class CSGOController {
         Nlog.info("getItemHistoryPrice... web request for {}", csgoItemHistoryPriceQueryDTO);
         Future<List<CSGOItemHistoryPriceDTO>> future = csgoItemService.requestItemPrices(csgoItemHistoryPriceQueryDTO);
         List<CSGOItemHistoryPriceDTO> ret = future.get();  // fixme 有问题的，马上去拿，请求完了统一去拿应该
+        // fixed：在  batchRequestAndSaveItemPrice 中完成上上述问题的修改
         Nlog.info("getItemHistoryPrice... writing db for result {}", csgoItemHistoryPriceQueryDTO);
         csgoItemService.insertItemPrices(ret);
         // 然后标记为已查询
         redisBit.setBit(webRequestKey, dOfYear, true);
         return ret;
+    }
+
+    private Set<Long> batchRequestAndSaveItemPrice(List<CSGOItemHistoryPriceQueryDTO> requests) throws ExecutionException, InterruptedException, MalformedURLException {
+        Nlog.info("batchRequestAndSaveItemPrice... web request for {}", requests);
+        LocalDateTime now = LocalDateTime.now();
+        int year = now.getYear();
+        int dOfYear = now.getDayOfYear();
+        String rawKey = "pricefetch:item%s:year" + year;
+        Map<CSGOItemHistoryPriceQueryDTO, Future<List<CSGOItemHistoryPriceDTO>>> resultMap = new HashMap<>();
+        Set<Long> successResponse = new HashSet<>();
+        for (CSGOItemHistoryPriceQueryDTO request : requests) {
+            // 先批量请求
+            String key = String.format(rawKey, request.getItemId());
+            if (redisBit.get(key) != null && redisBit.getBit(key, dOfYear)) {
+                Nlog.info("batchRequestAndSaveItemPrice... No need to request {}", request);
+                successResponse.add(request.getItemId());
+            } else {
+//                Nlog.info("batchRequestAndSaveItemPrice... Requesting {}", request);
+                Future<List<CSGOItemHistoryPriceDTO>> future = csgoItemService.requestItemPrices(request);
+                resultMap.put(request, future);
+            }
+        }
+
+        for (CSGOItemHistoryPriceQueryDTO request : requests) {
+            // 再处理回包
+            String key = String.format(rawKey, request.getItemId());
+            Future<List<CSGOItemHistoryPriceDTO>> future = resultMap.getOrDefault(request, null);
+            if (future != null) {
+                List<CSGOItemHistoryPriceDTO> ret = future.get();
+                if (ret != null && ret.size() > 0) {
+                    csgoItemService.insertItemPrices(ret);
+                    redisBit.setBit(key, dOfYear, true);
+                    successResponse.add(request.getItemId());
+                } else {
+                    Nlog.info("batchRequestAndSaveItemPrice... request for {} filed to response", request.getItemId());
+                }
+            }
+        }
+        return successResponse;
     }
 
     /**
@@ -219,7 +240,7 @@ public class CSGOController {
             List<CSGOItemHistoryPriceDTO> res = requestAndSaveItemPrice(csgoItemHistoryPriceQueryDTO, webRequestKey, dOfYear);
             if (res == null || res.size() == 0) {
                 Nlog.info("getItemLatestPrice... err, no ele for request {}", csgoItemHistoryPriceQueryDTO);
-                return (float) -1;
+                return (float) 0;
             }
         }
         // 看看 内存有没有
@@ -289,6 +310,11 @@ public class CSGOController {
         List<CSGOInventoryVO> userInventory = innerGetUserAllItems();
         double totalSpent = 0;
         double totalCurrent = 0;
+
+        List<CSGOItemHistoryPriceQueryDTO> requestList = userInventoryToRequestList(userInventory);
+        if (!requestList.isEmpty()) {
+            batchRequestAndSaveItemPrice(requestList);
+        }
         // 查询所有的最新价格
         for (CSGOInventoryVO inv : userInventory) {
             totalSpent += inv.getBoughtPrice();
@@ -302,6 +328,28 @@ public class CSGOController {
                 .itemCount(userInventory.size())
                 .build();
         return Result.success(ret);
+    }
+
+    private List<CSGOItemHistoryPriceQueryDTO> userInventoryToRequestList(List<CSGOInventoryVO> records) {
+        LocalDateTime now = LocalDateTime.now();
+        int year = now.getYear();
+        int dOfYear = now.getDayOfYear();
+        String webRequestKey = "pricefetch:item%s:year" + year;
+        List<CSGOItemHistoryPriceQueryDTO> requestList = new ArrayList<>();
+        for (CSGOInventoryVO record : records) {
+            Long itemId = record.getItemId();
+            String key = String.format(webRequestKey, itemId);
+
+            if (redisBit.get(key) == null || !redisBit.getBit(key, dOfYear)) {
+                // 没有更新的话，放到请求队列
+                requestList.add(CSGOItemHistoryPriceQueryDTO.builder()
+                        .itemId(itemId)
+                        .from(TimeUtil.localDateTimeToStr(now.minusDays(30), TimeUtil.NORMAL_FORMAT_PATTERN))
+                        .to(TimeUtil.localDateTimeToStr(now, TimeUtil.NORMAL_FORMAT_PATTERN))
+                        .build());
+            }
+        }
+        return requestList;
     }
 
 }
