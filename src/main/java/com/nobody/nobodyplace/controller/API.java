@@ -17,6 +17,9 @@ public class API {
     public static final String UPDATE_COUNTDOWN = COUNTDOWN + "/update";
     public static final String DELETE_COUNTDOWN = COUNTDOWN + "/delete";
 
+    // websocket related
+    public static final String WEB_SOCKET_END_POINT = "/notification";
+
     // csgo related
     private static final String CSGO = "/api/csgo";
 
@@ -105,4 +108,6 @@ public class API {
     public static final String GET_ITEM_PRICE = CSGO + "/get_item_price";
 
     public static final String GET_INVENTORY_STATUS = CSGO + "/inventory_status";
+
+    public static final String GET_RANKING = CSGO + "/ranking";
 }

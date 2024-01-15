@@ -2,6 +2,7 @@ package com.nobody.nobodyplace.service;
 
 import com.nobody.nobodyplace.pojo.dto.*;
 import com.nobody.nobodyplace.pojo.vo.CSGOInventoryVO;
+import com.nobody.nobodyplace.pojo.vo.CSGORankingVO;
 import com.nobody.nobodyplace.response.PageResult;
 
 import java.net.MalformedURLException;
@@ -18,7 +19,7 @@ public interface CSGOItemService {
 
     List<CSGOInventoryVO> getUserAllInventory(CSGOInventoryPageQueryDTO csgoInventoryPageQueryDTO);
 
-    void deleteUserInventory(CSGODeleteInventoryDTO csgoDeleteInventoryDTO);
+    Float deleteUserInventory(CSGODeleteInventoryDTO csgoDeleteInventoryDTO);
 
     Future<List<CSGOItemHistoryPriceDTO>> requestItemPrices(CSGOItemHistoryPriceQueryDTO csgoItemHistoryPriceQueryDTO) throws MalformedURLException, InterruptedException;
 
@@ -30,5 +31,8 @@ public interface CSGOItemService {
 
     List<CSGOItemHistoryPriceDTO> getItemHistoryPricesRecent(CSGOItemHistoryPriceQueryDTO csgoItemHistoryPriceQueryDTO);
 
+    List<CSGORankingVO> getRanking();
+
+    void notifyUser(String userId, String msg);
 
 }

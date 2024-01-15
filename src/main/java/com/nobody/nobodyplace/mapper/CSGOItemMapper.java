@@ -5,6 +5,7 @@ import com.nobody.nobodyplace.pojo.dto.*;
 import com.nobody.nobodyplace.pojo.entity.CSGOInventoryItem;
 import com.nobody.nobodyplace.pojo.entity.CSGOItem;
 import com.nobody.nobodyplace.pojo.vo.CSGOInventoryVO;
+import com.nobody.nobodyplace.pojo.vo.CSGORankingVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -23,6 +24,8 @@ public interface CSGOItemMapper {
 
     void deleteInventoryItem(CSGODeleteInventoryDTO csgoDeleteInventoryDTO);
 
+    Float getInventoryItemBoughtPrice(CSGODeleteInventoryDTO csgoDeleteInventoryDTO);
+
     void insertItemHistoryPrices(@Param("historyPrices") List<CSGOItemHistoryPriceDTO> csgoItemHistoryPriceDTOS);
 
     List<CSGOItemHistoryPriceDTO> getItemHistoryPrices(CSGOItemHistoryPriceQueryDTO csgoItemHistoryPriceQueryDTO);
@@ -30,5 +33,7 @@ public interface CSGOItemMapper {
     CSGOItemHistoryPriceDTO getItemLatestPrice(CSGOItemHistoryPriceQueryDTO csgoItemHistoryPriceQueryDTO);
 
     List<CSGOItemHistoryPriceDTO> getItemHistoryPricesRecent(CSGOItemHistoryPriceQueryDTO csgoItemHistoryPriceQueryDTO);
+
+    List<CSGORankingVO> getRanking();
 
 }

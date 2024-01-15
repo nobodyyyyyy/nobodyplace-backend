@@ -10,21 +10,25 @@ import com.nobody.nobodyplace.pojo.dto.*;
 import com.nobody.nobodyplace.pojo.entity.CSGOInventoryItem;
 import com.nobody.nobodyplace.pojo.entity.CSGOItem;
 import com.nobody.nobodyplace.pojo.vo.CSGOInventoryVO;
+import com.nobody.nobodyplace.pojo.vo.CSGORankingVO;
 import com.nobody.nobodyplace.properties.JwtProperties;
 import com.nobody.nobodyplace.response.PageResult;
 import com.nobody.nobodyplace.service.CSGOItemService;
+import com.nobody.nobodyplace.service.WebSocketServer;
 import com.nobody.nobodyplace.utils.HttpUtil;
 import com.nobody.nobodyplace.utils.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.AsyncResult;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.*;
 import org.springframework.stereotype.Service;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 @Service
@@ -77,8 +81,10 @@ public class CSGOItemServiceImpl implements CSGOItemService {
     }
 
     @Override
-    public void deleteUserInventory(CSGODeleteInventoryDTO csgoDeleteInventoryDTO) {
+    public Float deleteUserInventory(CSGODeleteInventoryDTO csgoDeleteInventoryDTO) {
+        Float boughtPrice = csgoItemMapper.getInventoryItemBoughtPrice(csgoDeleteInventoryDTO);
         csgoItemMapper.deleteInventoryItem(csgoDeleteInventoryDTO);
+        return boughtPrice;
     }
 
     /**
@@ -129,6 +135,16 @@ public class CSGOItemServiceImpl implements CSGOItemService {
     @Override
     public List<CSGOItemHistoryPriceDTO> getItemHistoryPricesRecent(CSGOItemHistoryPriceQueryDTO csgoItemHistoryPriceQueryDTO) {
         return csgoItemMapper.getItemHistoryPricesRecent(csgoItemHistoryPriceQueryDTO);
+    }
+
+    @Override
+    public List<CSGORankingVO> getRanking() {
+        return csgoItemMapper.getRanking();
+    }
+
+    @Async("taskExecutor")
+    public void notifyUser(String userId, String msg) {
+        WebSocketServer.sendMessageByUserId(userId, msg);
     }
 
 }

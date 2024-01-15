@@ -48,6 +48,10 @@
         delete from user_csgo_inventory where id = #{itemId} and user_id = #{userId}
     </delete>
 
+    <select id="getInventoryItemBoughtPrice" resultType="_float">
+        select bought_price from user_csgo_inventory where id = #{itemId} and user_id = #{userId}
+    </select>
+
     <insert id="insertItemHistoryPrices">
         insert ignore into csgo_history_price (item_id, price, time)
         values
@@ -73,6 +77,14 @@
 
     <select id="getItemHistoryPricesRecent" resultType="com.nobody.nobodyplace.pojo.dto.CSGOItemHistoryPriceDTO">
         select p.item_id itemId, p.price price, p.time `time` from csgo_history_price p where item_id = #{itemId} order by time desc limit 100
+    </select>
+
+    <select id="getRanking" resultType="com.nobody.nobodyplace.pojo.vo.CSGORankingVO">
+        SELECT i.user_id AS userId, u.`name`, SUM(bought_price) AS ownPrice
+        FROM user_csgo_inventory i
+        LEFT JOIN `user` u ON u.id = i.user_id
+        GROUP BY i.user_id
+        ORDER BY ownPrice DESC
     </select>
 
 </mapper>

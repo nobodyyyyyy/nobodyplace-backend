@@ -1,20 +1,22 @@
 package com.nobody.nobodyplace.controller;
 
-import com.github.pagehelper.Page;
 import com.nobody.nobodyplace.context.BaseContext;
 import com.nobody.nobodyplace.pojo.dto.*;
 import com.nobody.nobodyplace.pojo.vo.CSGOInventoryStatusVO;
 import com.nobody.nobodyplace.pojo.vo.CSGOInventoryVO;
+import com.nobody.nobodyplace.pojo.vo.CSGORankingVO;
 import com.nobody.nobodyplace.response.PageResult;
 import com.nobody.nobodyplace.response.Result;
 import com.nobody.nobodyplace.service.CSGOItemService;
+import com.nobody.nobodyplace.service.WebSocketServer;
 import com.nobody.nobodyplace.utils.TimeUtil;
 import com.nobody.nobodyplace.utils.redis.RedisBit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.MalformedURLException;
@@ -34,6 +36,21 @@ public class CSGOController {
     final RedisBit redisBit;
 
     private final RedisTemplate redisTemplate;
+
+    // redis keys
+    private final static String ITEM_PAGE_QUERY_KEY = "item:exterior%s:mainType%s:page%d:pageSize%d";
+    private final static String USER_INV_PAGE_QUERY_PREFIX = "inventory:user%d*";
+    private final static String USER_INV_PAGE_QUERY_KEY = "inventory:user%d:page%d:pagesize%d";
+    private final static String USER_ALL_INV_QUERY_KEY = "inventory_all:user%d";
+    private final static String WEB_REQUEST_KEY = "pricefetch:item%d:year%d";
+    private final static String ITEM_PRICE_HISTORY_KEY = "pricehistory:item%d:time%d_%d";
+    private final static String RANKING_KEY = "csgo_ranking";
+    private final static String USER_INFO_KEY = "userinfo:user%d";
+
+    private final static String CRON_TRANSACTION = "0 * * * * ?";  // for testing , real is "0 0 16 * * ?"
+
+
+//    private static ConcurrentHashMap<Long, String> userIdToNameMap = new ConcurrentHashMap<>();
 
     public CSGOController(CSGOItemService csgoItemService, RedisTemplate redisTemplate, RedisBit redisBit) {
         this.csgoItemService = csgoItemService;
@@ -59,8 +76,7 @@ public class CSGOController {
             String exterior = csgoItemPageQueryDTO.getExterior() == null ? "" : csgoItemPageQueryDTO.getExterior();
             int page = csgoItemPageQueryDTO.getPage();
             int pageSize = csgoItemPageQueryDTO.getPageSize();
-
-            String key = "item:exterior" + exterior + ":mainType" + mainType + ":page" + page + ":pageSize" + pageSize;
+            String key = String.format(ITEM_PAGE_QUERY_KEY, exterior, mainType, page, pageSize);
             PageResult res = (PageResult) redisTemplate.opsForValue().get(key);
             if (res != null && res.getRecords() != null && res.getRecords().size() != 0) {
                 Nlog.info("GET_ITEM_INFOS Redis found key = {}", key);
@@ -74,15 +90,27 @@ public class CSGOController {
         return Result.success(pageResult);
     }
 
+    private void updateRanking(Long id, Float boughtPrice) {
+        ZSetOperations zSetOperations = redisTemplate.opsForZSet();
+        Double score = zSetOperations.score(RANKING_KEY, id);
+        if (score == null) {
+            // 初始化
+            getRanking();
+        } else {
+            zSetOperations.incrementScore(RANKING_KEY, id, boughtPrice);
+        }
+    }
+
     @PostMapping(API.ADD_USER_ITEM)
     @CrossOrigin
     @ResponseBody
     public Result addUserItem(@RequestBody CSGOAddUserItemDTO csgoAddUserItemDTO) {
         Nlog.info("ADD_USER_ITEM: {}", csgoAddUserItemDTO);
         long id = BaseContext.getCurrentId();
-        cleanCache("inventory:user" + id + "*");
-        cleanCache("inventory_all:user" + id);
+        cleanCache(String.format(USER_INV_PAGE_QUERY_PREFIX, id));
+        cleanCache(String.format(USER_ALL_INV_QUERY_KEY, id));
         csgoItemService.addUserItem(csgoAddUserItemDTO);
+        updateRanking(id, csgoAddUserItemDTO.getBoughtPrice());
         return Result.success();
     }
 
@@ -92,7 +120,7 @@ public class CSGOController {
         long userId = csgoInventoryPageQueryDTO.getUserId();
         int page = csgoInventoryPageQueryDTO.getPage();
         int pageSize = csgoInventoryPageQueryDTO.getPageSize();
-        String key = "inventory:user" + userId + ":page" + page + ":pagesize" + pageSize;
+        String key = String.format(USER_INV_PAGE_QUERY_KEY, userId, page, pageSize);
         PageResult res = (PageResult) redisTemplate.opsForValue().get(key);
         if (res != null && res.getRecords() != null) {
             Nlog.info("innerGetUserItems... Redis found key = {}", key);
@@ -107,7 +135,7 @@ public class CSGOController {
         List<CSGOInventoryVO> res;
         long userId = BaseContext.getCurrentId();
         Nlog.info("innerGetUserAllItems... request user: {}", userId);
-        String key = "inventory_all:user" + userId;
+        String key = String.format(USER_ALL_INV_QUERY_KEY, userId);
         res = (List<CSGOInventoryVO>) redisTemplate.opsForValue().get(key);
         if (res != null) {
             Nlog.info("innerGetUserAllItems... Redis found key = {}", key);
@@ -161,9 +189,10 @@ public class CSGOController {
         long userId = BaseContext.getCurrentId();
         csgoDeleteInventoryDTO.setUserId(userId);
         Nlog.info("DELETE_USER_ITEM: {}", csgoDeleteInventoryDTO);
-        cleanCache("inventory:user" + userId + "*");
-        cleanCache("inventory_all:user" + userId);
-        csgoItemService.deleteUserInventory(csgoDeleteInventoryDTO);
+        cleanCache(String.format(USER_INV_PAGE_QUERY_PREFIX, userId));
+        cleanCache(String.format(USER_ALL_INV_QUERY_KEY, userId));
+        Float boughtPrice = csgoItemService.deleteUserInventory(csgoDeleteInventoryDTO);
+        updateRanking(userId, -boughtPrice);
         return Result.success();
     }
 
@@ -232,7 +261,7 @@ public class CSGOController {
         LocalDateTime now = LocalDateTime.now();
         int year = now.getYear();
         int dOfYear = now.getDayOfYear();
-        String webRequestKey = "pricefetch:item" + itemId + ":year" + year;
+        String webRequestKey = String.format(WEB_REQUEST_KEY, itemId, year);
         CSGOItemHistoryPriceQueryDTO csgoItemHistoryPriceQueryDTO = CSGOItemHistoryPriceQueryDTO.builder().itemId(itemId).build();
         csgoItemHistoryPriceQueryDTO.setFrom(TimeUtil.localDateTimeToStr(now.minusDays(30), TimeUtil.NORMAL_FORMAT_PATTERN));
         csgoItemHistoryPriceQueryDTO.setTo(TimeUtil.localDateTimeToStr(now, TimeUtil.NORMAL_FORMAT_PATTERN));
@@ -244,7 +273,7 @@ public class CSGOController {
             }
         }
         // 看看 内存有没有
-        String dataKey = "pricehistory:item" + itemId + ":time" + year + "_" + dOfYear;
+        String dataKey = String.format(ITEM_PRICE_HISTORY_KEY, itemId, year, dOfYear);
         List<CSGOItemHistoryPriceDTO> res = (List<CSGOItemHistoryPriceDTO>) redisTemplate.opsForValue().get(dataKey);
         if (res == null) {
             res = csgoItemService.getItemHistoryPrices(csgoItemHistoryPriceQueryDTO);
@@ -274,8 +303,7 @@ public class CSGOController {
         // 后续增加会员逻辑的话可以判断，并展示不同的范围
         csgoItemHistoryPriceQueryDTO.setFrom(TimeUtil.localDateTimeToStr(now.minusDays(30), TimeUtil.NORMAL_FORMAT_PATTERN));
         csgoItemHistoryPriceQueryDTO.setTo(TimeUtil.localDateTimeToStr(now, TimeUtil.NORMAL_FORMAT_PATTERN));
-
-        String webRequestKey = "pricefetch:item" + csgoItemHistoryPriceQueryDTO.getItemId() + ":year" + year;
+        String webRequestKey = String.format(WEB_REQUEST_KEY, csgoItemHistoryPriceQueryDTO.getItemId(), year);
 
         if (redisBit.get(webRequestKey) == null || !redisBit.getBit(webRequestKey, dOfYear)) {
             // 2. 没有更新的话，走网络请求，然后持久化
@@ -286,7 +314,7 @@ public class CSGOController {
         // 上面的 ret 不去信任，因为不符合请求的 from 和 to
         // 然后这里统一去请求，拿数据，
         // 1.1 更新了的话，看 redis，数据有没有在内存里面？
-        String dataKey = "pricehistory:item" + csgoItemHistoryPriceQueryDTO.getItemId() + ":time" + year + "_" + dOfYear;
+        String dataKey = String.format(ITEM_PRICE_HISTORY_KEY, csgoItemHistoryPriceQueryDTO.getItemId(), year, dOfYear);
         // 这里这样子设计，因为首先，一天的价格不会变，所以这一天当天的请求都可以缓存，
         // 然后到第二天，前面的都可以不用了，然后可以做删除操作
         ret = (List<CSGOItemHistoryPriceDTO>) redisTemplate.opsForValue().get(dataKey);
@@ -350,6 +378,53 @@ public class CSGOController {
             }
         }
         return requestList;
+    }
+
+    @GetMapping(API.GET_RANKING)
+    @CrossOrigin
+    @ResponseBody
+    public Result getRanking() {
+        ZSetOperations zSetOperations = redisTemplate.opsForZSet();
+        Set<Long> s = zSetOperations.reverseRange(RANKING_KEY, 0, -1);
+        List<CSGORankingVO> ret = new ArrayList<>();
+        if (s != null && s.size() > 0) {
+            int cur = 0;
+            for (Long userId : s) {
+                if (cur >= 10) {
+                    break;
+                }
+                ret.add(CSGORankingVO.builder()
+                        .userId(userId)
+                        .userName((String) redisTemplate.opsForValue().get(String.format(USER_INFO_KEY, userId)))
+                        .ownPrice(zSetOperations.score(RANKING_KEY, userId))
+                        .build());
+                cur++;
+            }
+            Long rank = zSetOperations.reverseRank(RANKING_KEY, BaseContext.getCurrentId()) + 1;
+            return Result.success(ret, String.valueOf(rank));
+        }
+        ret = csgoItemService.getRanking();
+        for (CSGORankingVO ranking : ret) {
+            zSetOperations.add(RANKING_KEY, ranking.getUserId(), ranking.getOwnPrice());
+            redisTemplate.opsForValue().set(String.format(USER_INFO_KEY, ranking.getUserId()), ranking.getUserName());
+        }
+        int to = Math.min(ret.size(), 10);
+        Long rank = zSetOperations.reverseRank(RANKING_KEY, BaseContext.getCurrentId()) + 1;
+        return Result.success(ret.subList(0, to), String.valueOf(rank));
+    }
+
+    @GetMapping("api/send")
+    @CrossOrigin
+    @ResponseBody
+    public void testWsSend(){
+        WebSocketServer.sendMessageByUserId(String.valueOf(BaseContext.getCurrentId()), "okokokokok");
+    }
+
+    @Scheduled(cron = CRON_TRANSACTION)  // "秒域 分域 时域 日域 月域 周域 年域"
+    public void notifyTransaction() {
+        for (Map.Entry<String, Set<String>> connEntry : WebSocketServer.connection.entrySet()) {
+            csgoItemService.notifyUser(connEntry.getKey(), "市场当日交易时间已到，请关注最新商品动态！");
+        }
     }
 
 }
