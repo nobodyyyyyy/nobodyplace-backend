@@ -2,8 +2,8 @@ package com.nobody.nobodyplace.controller;
 
 import com.google.gson.Gson;
 import com.nobody.nobodyplace.gson.BingSuggestionResponse;
-import com.nobody.nobodyplace.response.ResultPast;
-import com.nobody.nobodyplace.response.SearchSuggestions;
+import com.nobody.nobodyplace.response.old.ResultPast;
+import com.nobody.nobodyplace.response.old.SearchSuggestions;
 import com.nobody.nobodyplace.utils.HttpUtil;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;

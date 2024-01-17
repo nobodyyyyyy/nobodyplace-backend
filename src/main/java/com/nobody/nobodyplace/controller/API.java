@@ -1,7 +1,9 @@
 package com.nobody.nobodyplace.controller;
 
-import com.nobody.nobodyplace.response.ResultPast;
-import com.nobody.nobodyplace.response.csgo.IncomeStatusData;
+import com.nobody.nobodyplace.oldpojo.entity.csgo.CsgoItem;
+import com.nobody.nobodyplace.oldpojo.entity.csgo.CsgoUserTransaction;
+import com.nobody.nobodyplace.response.old.ResultPast;
+import com.nobody.nobodyplace.response.old.csgo.IncomeStatusData;
 
 public class API {
 
@@ -41,7 +43,7 @@ public class API {
      * get
      * 获取用户（我）所持有的物品列表
      * 入参: none
-     * 出参: infos: [{@link com.nobody.nobodyplace.entity.csgo.CsgoItem}, ...]
+     * 出参: infos: [{@link CsgoItem}, ...]
      *
      */
     public static final String GET_USER_PROPERTY = CSGO + "/get_user_property";
@@ -76,7 +78,7 @@ public class API {
      * 入参: {from: 开始时间戳（秒）, to: 结束, fetch: 是否强制走悠悠api更新，否则是单纯的读 db (0/1)}
      * 出参: records: [
      *  {
-            {@link com.nobody.nobodyplace.entity.csgo.CsgoUserTransaction}
+            {@link CsgoUserTransaction}
      *  },
      *  ...
      * ]

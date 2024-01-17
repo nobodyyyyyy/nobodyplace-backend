@@ -1,6 +1,6 @@
 package com.nobody.nobodyplace.interceptor;
 
-import com.nobody.nobodyplace.entity.User;
+import com.nobody.nobodyplace.oldpojo.entity.User;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 

@@ -2,7 +2,7 @@ package com.nobody.nobodyplace.handler;
 
 import com.nobody.nobodyplace.exception.BaseException;
 import com.nobody.nobodyplace.response.Result;
-import com.nobody.nobodyplace.service.CommonStorageService;
+import com.nobody.nobodyplace.service.old.CommonStorageService;
 import com.nobody.nobodyplace.utils.Constant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

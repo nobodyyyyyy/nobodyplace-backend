@@ -1,22 +1,22 @@
 package com.nobody.nobodyplace.controller;
 
 import com.google.gson.Gson;
-import com.nobody.nobodyplace.entity.csgo.CsgoItem;
-import com.nobody.nobodyplace.entity.csgo.CsgoPriceHistory;
-import com.nobody.nobodyplace.entity.csgo.CsgoUserProperty;
-import com.nobody.nobodyplace.entity.csgo.CsgoUserTransaction;
+import com.nobody.nobodyplace.oldpojo.entity.csgo.CsgoItem;
+import com.nobody.nobodyplace.oldpojo.entity.csgo.CsgoPriceHistory;
+import com.nobody.nobodyplace.oldpojo.entity.csgo.CsgoUserProperty;
+import com.nobody.nobodyplace.oldpojo.entity.csgo.CsgoUserTransaction;
 import com.nobody.nobodyplace.gson.csgo.LeaseRecordResponse;
 import com.nobody.nobodyplace.gson.csgo.MarketHistoryItemInfoResponse;
 import com.nobody.nobodyplace.requestbody.RequestGetIncomeStatus;
 import com.nobody.nobodyplace.requestbody.RequestGetUserTransaction;
 import com.nobody.nobodyplace.requestbody.RequestItemHistoryPrice;
-import com.nobody.nobodyplace.response.ResultPast;
-import com.nobody.nobodyplace.response.csgo.IncomeStatusData;
-import com.nobody.nobodyplace.response.csgo.PriceHistoryData;
-import com.nobody.nobodyplace.response.csgo.UserPropertyData;
-import com.nobody.nobodyplace.response.csgo.UserTransactionData;
-import com.nobody.nobodyplace.service.CommonStorageService;
-import com.nobody.nobodyplace.service.OldCsgoService;
+import com.nobody.nobodyplace.response.old.ResultPast;
+import com.nobody.nobodyplace.response.old.csgo.IncomeStatusData;
+import com.nobody.nobodyplace.response.old.csgo.PriceHistoryData;
+import com.nobody.nobodyplace.response.old.csgo.UserPropertyData;
+import com.nobody.nobodyplace.response.old.csgo.UserTransactionData;
+import com.nobody.nobodyplace.service.old.CommonStorageService;
+import com.nobody.nobodyplace.service.old.OldCsgoService;
 import com.nobody.nobodyplace.utils.HttpUtil;
 import com.nobody.nobodyplace.utils.TimeUtil;
 import org.apache.http.util.TextUtils;
@@ -33,7 +33,11 @@ import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 很久之前写的，弃用！
+ */
 @Controller
+@Deprecated
 public class OldCSGOController {
     private static final Logger Nlog = LoggerFactory.getLogger(OldCSGOController.class);
 

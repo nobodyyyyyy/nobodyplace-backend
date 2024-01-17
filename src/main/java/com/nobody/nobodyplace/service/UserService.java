@@ -1,9 +1,7 @@
 package com.nobody.nobodyplace.service;
 
-import com.nobody.nobodyplace.dao.UserDAO;
 import com.nobody.nobodyplace.pojo.entity.User;
 import com.nobody.nobodyplace.pojo.dto.UserLoginDTO;
-import org.springframework.stereotype.Service;
 
 public interface UserService {
 

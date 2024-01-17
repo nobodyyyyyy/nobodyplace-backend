@@ -1,9 +1,9 @@
 package com.nobody.nobodyplace.controller;
 
-import com.nobody.nobodyplace.entity.CountDown;
-import com.nobody.nobodyplace.response.CountDownData;
-import com.nobody.nobodyplace.response.ResultPast;
-import com.nobody.nobodyplace.service.CountDownService;
+import com.nobody.nobodyplace.oldpojo.entity.CountDown;
+import com.nobody.nobodyplace.response.old.CountDownData;
+import com.nobody.nobodyplace.response.old.ResultPast;
+import com.nobody.nobodyplace.service.old.CountDownService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
