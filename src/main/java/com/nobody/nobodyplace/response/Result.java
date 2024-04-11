@@ -11,9 +11,9 @@ import java.io.Serializable;
 @Data
 public class Result<T> implements Serializable {
 
-    private Integer code;
-    private String msg;
-    private T data;
+    public Integer code;
+    public String msg;
+    public T data;
 
     public static <T> Result<T> success() {
         Result<T> result = new Result<T>();
@@ -42,5 +42,4 @@ public class Result<T> implements Serializable {
         result.code = -1;
         return result;
     }
-
 }

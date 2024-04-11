@@ -217,6 +217,8 @@ public class CSGOController {
         String rawKey = "pricefetch:item%s:year" + year;
         Map<CSGOItemHistoryPriceQueryDTO, Future<List<CSGOItemHistoryPriceDTO>>> resultMap = new HashMap<>();
         Set<Long> successResponse = new HashSet<>();
+        // 请求的时候可能有重复的，不要重复查询
+        Set<Long> requestIds = new HashSet<>();
         for (CSGOItemHistoryPriceQueryDTO request : requests) {
             // 先批量请求
             String key = String.format(rawKey, request.getItemId());
@@ -225,8 +227,12 @@ public class CSGOController {
                 successResponse.add(request.getItemId());
             } else {
 //                Nlog.info("batchRequestAndSaveItemPrice... Requesting {}", request);
-                Future<List<CSGOItemHistoryPriceDTO>> future = csgoItemService.requestItemPrices(request);
-                resultMap.put(request, future);
+                if (!requestIds.contains(request.getItemId())) {
+                    // 请求的时候可能有重复的，不要重复查询
+                    Future<List<CSGOItemHistoryPriceDTO>> future = csgoItemService.requestItemPrices(request);
+                    resultMap.put(request, future);
+                    requestIds.add(request.getItemId());
+                }
             }
         }
 
@@ -341,6 +347,7 @@ public class CSGOController {
 
         List<CSGOItemHistoryPriceQueryDTO> requestList = userInventoryToRequestList(userInventory);
         if (!requestList.isEmpty()) {
+            Thread.sleep(10000);
             batchRequestAndSaveItemPrice(requestList);
         }
         // 查询所有的最新价格

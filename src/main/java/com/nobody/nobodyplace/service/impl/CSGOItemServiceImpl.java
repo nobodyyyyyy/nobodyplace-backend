@@ -30,6 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @Slf4j
@@ -41,6 +45,8 @@ public class CSGOItemServiceImpl implements CSGOItemService {
 
     private static final String API_GET_ITEM_PAST_7_DAY_TRANSACTION = "https://buff.163.com/api/market/goods/price_history/buff?game=csgo&currency=CNY&days=7";
     private static final String API_GET_ITEM_PAST_MONTH_TRANSACTION = "https://buff.163.com/api/market/goods/price_history/buff?game=csgo&currency=CNY&days=30";
+
+    public static volatile Semaphore maxParallelRequest = new Semaphore(5);
 
     public CSGOItemServiceImpl(CSGOItemMapper csgoItemMapper, JwtProperties jwtProperties) {
         this.csgoItemMapper = csgoItemMapper;
@@ -93,16 +99,28 @@ public class CSGOItemServiceImpl implements CSGOItemService {
     @Override
     @Async("taskExecutor")
     public Future<List<CSGOItemHistoryPriceDTO>> requestItemPrices(CSGOItemHistoryPriceQueryDTO csgoItemHistoryPriceQueryDTO) throws MalformedURLException, InterruptedException {
+        maxParallelRequest.acquire();
         log.info("requestItemPrices... Web current price request for {}", csgoItemHistoryPriceQueryDTO);
         long itemId = csgoItemHistoryPriceQueryDTO.getItemId();
         String requestUrl = HttpUtil.setUrlParam(API_GET_ITEM_PAST_MONTH_TRANSACTION, "goods_id", itemId);
         String cookie = jwtProperties.getBuffCookie();
         HttpUtil.HttpResponse response = HttpUtil.get(new URL(requestUrl), false, 10000, cookie);
-        MarketHistoryItemInfoResponse historyItemInfoResponse =
-                new Gson().fromJson(response.data, MarketHistoryItemInfoResponse.class);
-        List<CSGOItemHistoryPriceDTO> histories = historyItemInfoResponse.getPriceHistory(csgoItemHistoryPriceQueryDTO.getItemId());
-        Thread.sleep(1000);
-        return new AsyncResult<>(histories);
+        MarketHistoryItemInfoResponse historyItemInfoResponse = null;
+        try {
+            historyItemInfoResponse = new Gson().fromJson(response.data, MarketHistoryItemInfoResponse.class);
+        } catch (Exception e) {
+            log.info("requestItemPrices... Request error for query item id: {}", csgoItemHistoryPriceQueryDTO.getItemId());
+        }
+        if (historyItemInfoResponse != null) {
+            List<CSGOItemHistoryPriceDTO> histories = historyItemInfoResponse.getPriceHistory(csgoItemHistoryPriceQueryDTO.getItemId());
+            Thread.sleep(1000);
+            maxParallelRequest.release();
+            return new AsyncResult<>(histories);
+        } else {
+            maxParallelRequest.release();
+            return null;
+        }
+
     }
 
     /**

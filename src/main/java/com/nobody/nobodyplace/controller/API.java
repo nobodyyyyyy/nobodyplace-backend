@@ -112,4 +112,11 @@ public class API {
     public static final String GET_INVENTORY_STATUS = CSGO + "/inventory_status";
 
     public static final String GET_RANKING = CSGO + "/ranking";
+
+    // 优惠券相关
+    private static final String COUPON = "/api/coupon";
+
+    public static final String GET_SEC_KILL_COUPON_INFO = COUPON + "/get_coupon_info";
+
+    public static final String SEC_KILL_REQUEST = COUPON + "/sec_kill/";
 }
