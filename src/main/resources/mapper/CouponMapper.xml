@@ -23,4 +23,10 @@
         select count(id) from coupon_order
         where coupon_id = #{couponId} and user_id = #{userId}
     </select>
+
+    <select id="getAllSeckillCouponInfo" resultType="com.nobody.nobodyplace.pojo.dto.CouponInfoDTO">
+        select ci.id, ci.title, ci.subtitle, ci.pay_value, sc.stock, ci.start_time
+        from coupon_info ci, seckill_coupon sc
+        where sc.coupon_id = ci.id
+    </select>
 </mapper>
