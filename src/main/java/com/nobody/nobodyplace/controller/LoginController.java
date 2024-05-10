@@ -1,6 +1,7 @@
 package com.nobody.nobodyplace.controller;
 
 
+import com.nobody.nobodyplace.RocketMQ.MQProducerService;
 import com.nobody.nobodyplace.pojo.entity.User;
 import com.nobody.nobodyplace.pojo.dto.UserLoginDTO;
 import com.nobody.nobodyplace.pojo.vo.UserLoginVO;
@@ -11,11 +12,9 @@ import com.nobody.nobodyplace.utils.Constant;
 import com.nobody.nobodyplace.utils.JwtUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -74,6 +73,17 @@ public class LoginController {
                 .build();
 
         return Result.success(userLoginVO);
+    }
+
+    @Autowired
+    private MQProducerService mqProducerService;
+
+    @GetMapping(value = "/api/test")
+    @CrossOrigin
+    @ResponseBody
+    public Result<UserLoginVO> testService() {
+        mqProducerService.send(User.builder().id(123L).password("123123L").build());
+        return Result.success();
     }
 
 }

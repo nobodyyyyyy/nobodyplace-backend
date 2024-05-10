@@ -13,4 +13,11 @@ public class CSGOInventoryPageQueryDTO {
     //每页显示记录数
     private int pageSize;
 
+    public CSGOInventoryPageQueryDTO() {}
+
+    public CSGOInventoryPageQueryDTO(Long userId, int page, int pageSize) {
+        this.userId = userId;
+        this.page = page;
+        this.pageSize = pageSize;
+    }
 }
