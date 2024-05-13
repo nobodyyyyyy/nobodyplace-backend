@@ -2,7 +2,6 @@ package com.nobody.nobodyplace.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.gson.Gson;
-import com.nobody.nobodyplace.RocketMQ.MQConsumerService;
 import com.nobody.nobodyplace.RocketMQ.MQProducerService;
 import com.nobody.nobodyplace.context.BaseContext;
 import com.nobody.nobodyplace.mapper.CouponMapper;
@@ -186,17 +185,9 @@ public class CouponServiceImpl implements CouponService {
 //        });
 //    }
 
-    private void createCouponOrder(CouponOrder couponOrder) {
-
+    public void createCouponOrder(CouponOrder couponOrder) {
         long currentUser = couponOrder.getUserId();
         long couponId = couponOrder.getCouponId();
-
-        // 下面不行，子线程不能从 ThreadLocal 中拿到代理对象
-        // 怎么处理事务呢？要提前处理事务！
-        //
-//                        Object proxy = AopContext.currentProxy(); // 拿到代理对象 CouponService 接口
-//                        CouponServiceImpl s = (CouponServiceImpl) proxy;
-//                        s.createCouponOrder(couponId, currentUser);
         RLock lock = redissonClient.getLock("lock:order:" + currentUser);
         boolean isLock = lock.tryLock();
         if (!isLock) {
@@ -210,17 +201,6 @@ public class CouponServiceImpl implements CouponService {
             lock.unlock();
         }
     }
-
-//    @Service
-//    @RocketMQMessageListener(topic = MQConsumerService.TOPIC, selectorExpression = MQ_TAG_COUPON, consumerGroup = "Con_Group_One")
-//    public class ConsumerSend implements RocketMQListener<String> {
-//        // 监听到消息就会执行此方法
-//        @Override
-//        public void onMessage(String order) {
-//            CouponOrder couponOrder = new Gson().fromJson(order, CouponOrder.class);
-//            log.info("接收到消息了");
-//        }
-//    }
 
     @Override
     public CouponInfoDTO getCouponInfo(Long id) {
@@ -250,13 +230,15 @@ public class CouponServiceImpl implements CouponService {
         } else if (res.equals(2L)) {
             return Result.error("不能重复购买");
         }
-
-        // 向 MQ 发送消息
-        CouponOrder order = new CouponOrder(currentUser, couponId, orderId);
-        mqProducerService.send(JSON.toJSONString(order), MQ_TAG_COUPON);
         if (this.proxy == null) {
             this.proxy = (CouponServiceImpl) AopContext.currentProxy(); // 拿到代理对象 CouponService 接口
         }
+
+
+
+        // 向 MQ 发送消息
+        CouponOrder order = new CouponOrder(orderId, currentUser, couponId, 0);
+        mqProducerService.send(JSON.toJSONString(order), MQ_TAG_COUPON);
         return Result.success(orderId);
     }
 
@@ -285,7 +267,7 @@ public class CouponServiceImpl implements CouponService {
 //        return Result.success(orderId);
 //    }
 
-//    @Override
+    //    @Override
     @Deprecated
     public Result oldSecKillCoupon(Long id) {
         Long currentUser = BaseContext.getCurrentId();
@@ -356,12 +338,14 @@ public class CouponServiceImpl implements CouponService {
         long couponId = order.getCouponId();
         int bought = couponMapper.queryUserOrderedCoupon(couponId, currentUser);
         if (bought > 0) {
-            log.info("不能重复购买");
+            // 理应不会到这里，兜底策略
+            log.info("innerCreateCouponOrder... [Error] User {} bought {} before", currentUser, couponId);
             return;
         }
         int success = couponMapper.updateCouponStockMinusOne(couponId);
         if (success == 0) {
-            log.info("库存不足");
+            // 理应不会到这里，兜底策略
+            log.info("innerCreateCouponOrder... [Error] {} is not enough", couponId);
             return;
         }
         // 创建订单。在订单表新增数据
